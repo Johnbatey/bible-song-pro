@@ -2,6 +2,8 @@
 
 A modern church presentation system for OBS Studio that lets you display Bible verses and song lyrics in real-time.
 
+This is a fork of the original masterpiece from ![Johnson Olakotan](https://github.com/Johnbatey/bible-song-pro-obs)
+
 ---
 
 ## Preview
@@ -38,6 +40,8 @@ A modern church presentation system for OBS Studio that lets you display Bible v
 - Fully customizable display
 - Lightweight and fast
 - Works directly inside OBS Browser Source
+- Increased Lines tab
+- Ref and Text content auto-adjusts based screen view-width
 - **AI Scripture Assistant** — real-time speech detection that listens to your sermon and instantly surfaces Bible references as you speak, keeping your operator always one step ahead
 - **Independent Lower Third & Full Screen backgrounds** — set a different visual background for each display mode, with a one-click Link button to mirror both simultaneously
 

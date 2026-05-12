@@ -168,6 +168,7 @@
     // DOM Elements
     const elements = {
       txt: document.getElementById('text-container'),
+      // ref_badge: document.getElementById('ref-badge'),
       bg: document.getElementById('bg-layer'),
       bgCrossfade: document.getElementById('bg-layer-crossfade'),
       bgVideo: document.getElementById('bg-video'),
@@ -1670,7 +1671,16 @@
     
     // Handle standard mode (non-custom)
     function handleStandardMode(d, mode, isBible) {
-      // Hide custom elements
+
+      const ref_badge = document.querySelectorAll('#ref-badge');
+      ref_badge.forEach(el => {
+        // Get current font size and convert to number
+        const currentSize = el.style.fontSize || getComputedStyle(el).fontSize;
+        const sizeInPt = parseFloat(currentSize.replace('pt', '')) || 36; // Default to 36pt if not found
+        const [size, unit] = convertPtToVw(d.displayViewportWidth, d.displayViewportHeight, sizeInPt)
+        const newSize = clamp(1, size, 2) + unit;
+        el.style.fontSize = newSize;
+      });
       elements.customRefBox.style.display = 'none';
       if (elements.customVersionBar) elements.customVersionBar.style.display = 'none';
       elements.customMainBar.style.display = 'none';
@@ -1723,6 +1733,8 @@
         elements.txt.style.justifyContent = (vAlign === 'top') ? 'flex-start' : (vAlign === 'bottom' ? 'flex-end' : 'center');
         elements.txt.style.flexDirection = 'column';
         elements.txt.style.margin = '0 auto';
+        const [size, unit] = convertPtToVw(d.displayViewportWidth, d.displayViewportHeight, parseFloat(d.fontSizeFull));
+        elements.txt.style.fontSize = clamp(0.2, size, 0.5) + unit;
       } else {
         // Lower third mode
         const ltAnchorMode = getLtAnchorMode(d);
@@ -1747,6 +1759,8 @@
         elements.txt.style.alignItems = (hAlignLT === 'left') ? 'flex-start' : (hAlignLT === 'right') ? 'flex-end' : (hAlignLT === 'justify' ? 'stretch' : 'center');
         elements.txt.style.justifyContent = (vAlignLT === 'top') ? 'flex-start' : (vAlignLT === 'bottom' ? 'flex-end' : 'center');
         elements.txt.style.flexDirection = 'column';
+        const [size, unit] = convertPtToVw(d.displayViewportWidth, d.displayViewportHeight, parseFloat(d.fontSizeLT));
+        elements.txt.style.fontSize = clamp(0.2, size, 0.5) + unit;
 
         // For Bible LT remove any inline background color on the reference line so it's transparent
         if (isBible) {
@@ -1766,6 +1780,31 @@
         }
       }
     }
+
+    /**
+   * Converts pt (points) to vw (viewport width)
+   * @param {number} pt - The value in points
+   * @returns {number} - The equivalent value in vw units
+   * Custom code by Phreaker
+   */
+  function convertPtToVw(viewportWidth, viewportHeight, pt) {
+    // 1pt = 1.3333... pixels (96 DPI / 72 pt per inch)
+    const px = pt * (96 / 72);
+
+    // Calculate vw based on width: (px / viewportWidth) * 100
+    const vw = (px / viewportWidth) * 100;
+
+    // Calculate vh based on height: (px / viewportHeight) * 100
+    const vh = (px / viewportHeight) * 100;
+
+    // Use the smaller of vw or vh to ensure text fits within both dimensions
+    const size = Math.min(vw, vh);
+    const unit = size === vw ? 'vw' : 'vh';
+    const size_out = size.toFixed(3);
+    debug(`Converted ${pt}pt to ${size_out}${unit} (viewport: ${viewportWidth}x${viewportHeight}px, calculated: ${vw}vw, ${vh}vh)`);
+
+    return [size_out, unit]; // Return both the size and the unit
+  }
 
     function isGifSource(src) {
       if (!src) return false;

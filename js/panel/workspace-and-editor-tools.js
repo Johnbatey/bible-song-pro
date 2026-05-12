@@ -571,7 +571,7 @@
     }
 
     function getMaxLinesForCurrentTab(tab = sidebarTab) {
-      return (tab === 'songs') ? 6 : 3;
+      return (tab === 'songs') ? 10 : 3;
     }
 
     function updateLinePickerAvailability() {
@@ -579,9 +579,17 @@
       const btn4 = document.getElementById('line-4');
       const btn5 = document.getElementById('line-5');
       const btn6 = document.getElementById('line-6');
+      const btn7 = document.getElementById('line-7');
+      const btn8 = document.getElementById('line-8');
+      const btn9 = document.getElementById('line-9');
+      // const btn10 = document.getElementById('line-10');
       if (btn4) btn4.disabled = !isSongs;
       if (btn5) btn5.disabled = !isSongs;
       if (btn6) btn6.disabled = !isSongs;
+      if (btn7) btn7.disabled = !isSongs;
+      if (btn8) btn8.disabled = !isSongs;
+      if (btn9) btn9.disabled = !isSongs;
+      // if (btn10) btn10.disabled = !isSongs;
     }
 
     function isCustomModeAllowed() {
@@ -1450,22 +1458,22 @@
       if (refBgEnabled && allowBackground) {
         styles.push(`background:${backgroundColor || '#000000'}`);
         styles.push(`padding:${paddingValue}`);
-        styles.push(referenceShadowEnabled ? 'box-shadow:0 10px 24px rgba(0,0,0,0.42);' : 'box-shadow:none;');
-        styles.push('text-shadow:none;');
+        styles.push(referenceShadowEnabled ? 'box-shadow:0 10px 24px rgba(0,0,0,0.42)' : 'box-shadow:none');
+        styles.push('text-shadow:none');
       } else {
         styles.push('background:transparent');
         styles.push('padding:0');
-        styles.push('box-shadow:none;');
-        styles.push(referenceShadowEnabled ? 'text-shadow:0 10px 24px rgba(0,0,0,0.65);' : 'text-shadow:none;');
+        styles.push('box-shadow:none');
+        styles.push(referenceShadowEnabled ? 'text-shadow:0 10px 24px rgba(0,0,0,0.65)' : 'text-shadow:none');
       }
-      return `<span style="${styles.join(';')}">${text}</span>`;
+      return `<span id="ref-badge" style="${styles.join(';')}">${text}</span>`;
     }
 
     function buildFullBibleSegment({ referenceLabel, verseHtml, refSize, refColor, refBgColor, verseAlign, refAlign, verseShadowStyle, refPosition, refTextTransform }) {
       const normalizedAlign = (['left', 'right', 'center'].includes(refAlign) ? refAlign : 'center');
       const containerAlign = (refAlign === 'justify') ? 'left' : normalizedAlign;
       const refBadge = buildReferenceBadgeSpan(referenceLabel, refSize, refColor, refBgColor, { textTransform: refTextTransform || fullRefTextTransform });
-      const refHtml = `<div style="text-align:${containerAlign};margin:0 20px 20px;width:100%">${refBadge}</div>`;
+      const refHtml = `<div style="text-align:${containerAlign};margin:0 20px 20px;width:100%;font-size:${refSize}pt">${refBadge}</div>`;
       const extraSpacingStyle = verseAlign === 'justify'
         ? 'word-spacing:0;letter-spacing:0;text-justify:inter-word;'
         : '';
@@ -1482,7 +1490,7 @@
         refBgColor,
         { allowBackground, padding, borderRadius, textTransform: refTextTransform || ltRefTextTransform }
       );
-      return `<div class="jo-ref-line" style="margin-bottom:3px;width:100%;text-align:${alignValue}">${refBadge}</div>` +
+      return `<div class="jo-ref-line" style="margin-bottom:3px;width:100%;text-align:${alignValue};">${refBadge}</div>` +
              `<div class="jo-body" style="${verseShadowStyle}">${verseHtml}</div>`;
     }
 

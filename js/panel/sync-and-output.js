@@ -1803,9 +1803,11 @@
         'text-shadow:none;';
       const showVerseNos = ui.showVerseNos;
       let verseRaw = p.text;
+      // console.log('Original verse text:', verseRaw);
       if (!showVerseNos) {
         verseRaw = verseRaw.replace(/<span class="jo-verse-sup">.*?<\/span>\s*/g, '');
       }
+      // let verseHtml = convertHighlightsToHtml(verseRaw.toUpperCase()); // convert all output text to uppercase
       let verseHtml = convertHighlightsToHtml(verseRaw);
       
       let fontSizeAdjusted = fontSizeLT;
@@ -2177,11 +2179,12 @@
           }
         }
         if (secondarySegment) {
-          dualSectionHtml = `<div class="dual-secondary-wrapper">${secondarySegment}</div>`;
+          dualSectionHtml = (mode === 'full')? `<div class="dual-secondary-wrapper">${secondarySegment}</div>` : `<div class="dual-secondary-wrapper-lt" style="width:50%;height:100%;">${secondarySegment}</div>`;
         }
       }
+
       if (dualSectionHtml) {
-        outHtml = `<div class="dual-primary-block">${outHtml}</div>${dualSectionHtml}`;
+        outHtml = (mode === 'full')? `<div class="dual-primary-block">${outHtml}</div>${dualSectionHtml}` : `<div style="width:100%;height:100%;display:flex;flex-direction:row;"><div class="dual-primary-block" style="width:50%;height:100%;">${outHtml}</div>${dualSectionHtml}</div>`;
       }
       const payload = {
         text: outHtml,
@@ -2191,6 +2194,8 @@
         fontWeight,
         fontSizeFull: fontSizeFullAdjusted,
         fontSizeLT: fontSizeAdjusted,
+        fullRefFontSize: refFontSize,
+        ltRefFontSize: ltRefSize,
         lineHeightFull: lineHeightFullAdjusted,
         lineHeightLT: lineHeightAdjusted,
         ltWidthPct: ui.ltWidthPct,

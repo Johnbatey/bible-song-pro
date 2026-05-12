@@ -273,6 +273,16 @@
       gap: 0;
     }
 
+    .dual-secondary-wrapper-lt {
+      margin-top: 0px;
+      padding-top: 0px;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
     .dual-secondary-wrapper .jo-ref-line {
       margin-bottom: 2px !important;
       opacity: 0.85;
