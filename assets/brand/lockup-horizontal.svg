@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 32" width="240" height="32" role="img" aria-label="Bible Song Pro">
+  <title>Bible Song Pro — horizontal lockup</title>
+  <!-- NOTE: text is live, not outlined. For print/production, convert to outlines
+       in a vector tool with Inter 600 installed. Tracking is -0.02em, optical size 32. -->
+  <g fill="currentColor">
+    <rect x="0"    y="11"    width="2.5"  height="10"/>
+    <rect x="4.5"  y="5"     width="2.5"  height="22"/>
+    <rect x="9"    y="9.5"   width="2.5"  height="13"/>
+    <rect x="13.5" y="8.5"   width="10.5" height="2.5"/>
+    <rect x="13.5" y="14.75" width="10.5" height="2.5"/>
+    <rect x="13.5" y="21"    width="6.5"  height="2.5"/>
+  </g>
+  <text x="40" y="22.5"
+        font-family="Inter, 'Inter Variable', system-ui, sans-serif"
+        font-size="20" font-weight="600" letter-spacing="-0.4"
+        fill="currentColor">Bible Song Pro</text>
+</svg>

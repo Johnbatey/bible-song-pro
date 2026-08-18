@@ -3,6 +3,30 @@
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: swap;
+      src: url('../../assets/fonts/Inter-latin-var.woff2') format('woff2');
+    }
+
+    @font-face {
+      font-family: 'Source Serif 4';
+      font-style: normal;
+      font-weight: 200 900;
+      font-display: swap;
+      src: url('../../assets/fonts/SourceSerif4-latin-var.woff2') format('woff2');
+    }
+
+    @font-face {
+      font-family: 'Geist Mono';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('../../assets/fonts/GeistMono-latin-400.woff2') format('woff2');
+    }
     
     @font-face {
       font-family: 'CustomFont';

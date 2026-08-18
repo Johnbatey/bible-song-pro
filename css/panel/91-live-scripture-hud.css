@@ -59,35 +59,35 @@
       gap: 7px;
       flex-shrink: 0;
     }
-	    .ls-hud-title::before {
+    .ls-hud-title::before {
       content: '';
       width: 8px;
       height: 8px;
       border-radius: 999px;
-      background: var(--accent, #0a84ff);
-      box-shadow: 0 0 8px color-mix(in srgb, var(--accent, #0a84ff) 60%, transparent 40%);
-	      flex-shrink: 0;
-	    }
-	    .ls-hud-mode-toggle {
-	      height: 18px;
-	      min-width: 34px;
-	      padding: 0 6px;
-	      border-radius: 0;
-	      border: 1px solid color-mix(in srgb, var(--accent, #0a84ff) 45%, var(--border, rgba(255,255,255,0.12)) 55%);
-	      background: color-mix(in srgb, var(--accent, #0a84ff) 18%, var(--bg-panel, #1b1f2a) 82%);
-	      color: var(--text, #f5f5f7);
-	      font-size: 9px;
-	      font-weight: 800;
-	      line-height: 1;
-	      cursor: pointer;
-	      text-transform: uppercase;
-	      pointer-events: auto;
-	      transition: background 0.12s, border-color 0.12s, color 0.12s;
-	    }
-	    .ls-hud-mode-toggle:hover {
-	      background: color-mix(in srgb, var(--accent, #0a84ff) 28%, var(--bg-panel, #1b1f2a) 72%);
-	      border-color: color-mix(in srgb, var(--accent, #0a84ff) 62%, var(--border, rgba(255,255,255,0.12)) 38%);
-	    }
+      background: var(--accent, #FF5500);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--accent, #FF5500) 60%, transparent 40%);
+      flex-shrink: 0;
+    }
+    .ls-hud-mode-toggle {
+      height: 18px;
+      min-width: 34px;
+      padding: 0 6px;
+      border-radius: 4px;
+      border: 1px solid color-mix(in srgb, var(--accent, #FF5500) 45%, var(--border, #262628) 55%);
+      background: color-mix(in srgb, var(--accent, #FF5500) 18%, var(--bg-panel, #161414) 82%);
+      color: var(--text, #FFFFFF);
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      text-transform: uppercase;
+      pointer-events: auto;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    .ls-hud-mode-toggle:hover {
+      background: color-mix(in srgb, var(--accent, #FF5500) 28%, var(--bg-panel, #161414) 72%);
+      border-color: color-mix(in srgb, var(--accent, #FF5500) 62%, var(--border, #262628) 38%);
+    }
 	    .ls-hud-mode-toggle.is-song {
 	      border-color: color-mix(in srgb, #34c759 48%, var(--border, rgba(255,255,255,0.12)) 52%);
 	      background: color-mix(in srgb, #34c759 18%, var(--bg-panel, #1b1f2a) 82%);

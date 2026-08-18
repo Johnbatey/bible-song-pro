@@ -1,64 +1,122 @@
-    :root {
-      /* ══ Apple Design System — Dark Mode ══ */
-      --bg-dark: #000000;
-      --bg-panel: #1c1c1e;
-      --panel-content-bg: #2c2c2e;
-      --header-toolbar-bg: #1c1c1e;
-      --panel-section-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
-      /* Accent — Apple Blue */
-      --accent: #0a84ff;
-      --accent-light: #409cff;
-      --accent-dark: #0071e3;
-      /* Typography */
-      --text: #f5f5f7;
-      --text-secondary: #86868b;
-      --text-tertiary: #6e6e73;
-      /* Structure */
-      --border: rgba(255, 255, 255, 0.08);
-      --border-elevated: rgba(255, 255, 255, 0.12);
-      --tab-active-color: #0a84ff;
-      --button-border: rgba(255, 255, 255, 0.1);
-      --button-live-border: rgba(255, 69, 58, 0.6);
-      --button-shadow: rgba(0, 0, 0, 0.5);
-      /* Semantic */
-      --danger: #ff453a;
-      --success: #30d158;
-      --warning: #ffd60a;
-      --section-label-color: var(--accent);
-      --settings-footer-color: var(--text-secondary);
-      --settings-footer-link-color: var(--accent);
-      --header-btn-bg: rgba(255, 255, 255, 0.06);
-      --gradient-start: #000000;
-      --gradient-end: #0a0a0a;
-      --preview-base-scale: 1;
-      --settings-modal-width: 620px;
-      --settings-modal-height: 90vh;
-      /* Surfaces — Apple Vibrancy Materials */
-      --activity-bar-bg: rgba(28, 28, 30, 0.92);
-      --body-bg: #000000;
-      --body-radial: radial-gradient(1400px 800px at 5% -15%, rgba(10, 132, 255, 0.04), transparent 60%);
-      --studio-dock-bg: rgba(28, 28, 30, 0.95);
-      --footer-bar-bg: #1c1c1e;
-      --studio-pane-bg: rgba(44, 44, 46, 0.65);
-      --studio-pane-title-bg: rgba(58, 58, 60, 0.45);
-      --program-panel-bg: #000000;
-      /* Apple Materials */
-      --material-chrome: rgba(30, 30, 30, 0.78);
-      --material-thin: rgba(44, 44, 46, 0.6);
-      --material-thick: rgba(28, 28, 30, 0.92);
-      --material-ultrathin: rgba(255, 255, 255, 0.03);
-      /* Spacing System (4px grid) */
-      --space-xs: 4px;
-      --space-sm: 8px;
-      --space-md: 12px;
-      --space-lg: 16px;
-      --space-xl: 24px;
-      --page-nav-height: 36px;
-      /* Radius */
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 14px;
-      --radius-xl: 20px;
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../../assets/fonts/Inter-latin-var.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('../../assets/fonts/SourceSerif4-latin-var.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../assets/fonts/GeistMono-latin-400.woff2') format('woff2');
+}
+
+:root {
+  /* ══ Bible Song Pro Design Tokens v1.0 ══ */
+  --bsp-booth: #0C0B0B;
+  --bsp-ground: #111010;
+  --bsp-surface: #161414;
+  --bsp-raised: #1D1B1C;
+  --bsp-active: #232221;
+  --bsp-edge: #262628;
+
+  --bsp-mute: #6E6968;
+  --bsp-dim: #A8A2A0;
+  --bsp-soft: #D9D4D2;
+  --bsp-screen: #FFFFFF;
+
+  /* Accent — Signal Orange */
+  --accent: #FF5500;
+  --accent-light: #FF7728;
+  --accent-dark: #B23E00;
+  --accent-wash: rgba(255, 85, 0, 0.12);
+  --accent-glow: rgba(255, 85, 0, 0.28);
+
+  /* Tally System */
+  --tally-program: #FF5500;
+  --tally-preview: #22C55E;
+  --tally-hold: #6E6968;
+  --tally-fault: #EF4444;
+  --tally-link: #3B82F6;
+
+  /* Surfaces & Frame */
+  --bg-dark: #0C0B0B;
+  --bg-ground: #111010;
+  --bg-panel: #161414;
+  --panel-content-bg: #1D1B1C;
+  --header-toolbar-bg: #111010;
+  --panel-section-bg: linear-gradient(180deg, rgba(255, 85, 0, 0.04), rgba(255, 255, 255, 0));
+
+  /* Typography */
+  --font-voice: "Source Serif 4", "Source Serif Pro", Georgia, serif;
+  --font-interface: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-signal: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --text: #FFFFFF;
+  --text-secondary: #A8A2A0;
+  --text-tertiary: #6E6968;
+
+  /* Structure */
+  --border: #262628;
+  --border-elevated: #323236;
+  --tab-active-color: #FF5500;
+  --button-border: #262628;
+  --button-live-border: rgba(255, 85, 0, 0.8);
+  --button-shadow: rgba(0, 0, 0, 0.5);
+
+  /* Semantic */
+  --danger: #EF4444;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --section-label-color: var(--accent);
+  --settings-footer-color: var(--text-secondary);
+  --settings-footer-link-color: var(--accent);
+  --header-btn-bg: rgba(255, 255, 255, 0.05);
+  --gradient-start: #0C0B0B;
+  --gradient-end: #111010;
+  --preview-base-scale: 1;
+  --settings-modal-width: 620px;
+  --settings-modal-height: 90vh;
+
+  /* Surfaces */
+  --activity-bar-bg: rgba(17, 16, 16, 0.95);
+  --body-bg: #0C0B0B;
+  --body-radial: radial-gradient(1400px 800px at 5% -15%, rgba(255, 85, 0, 0.05), transparent 60%);
+  --studio-dock-bg: rgba(22, 20, 20, 0.95);
+  --footer-bar-bg: #111010;
+  --studio-pane-bg: rgba(29, 27, 28, 0.85);
+  --studio-pane-title-bg: rgba(35, 34, 33, 0.7);
+  --program-panel-bg: #0C0B0B;
+
+  /* Apple Materials / Overlay surfaces */
+  --material-chrome: rgba(22, 20, 20, 0.88);
+  --material-thin: rgba(29, 27, 28, 0.7);
+  --material-thick: rgba(17, 16, 16, 0.95);
+  --material-ultrathin: rgba(255, 255, 255, 0.03);
+
+  /* Spacing System (4px grid) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --page-nav-height: 36px;
+
+  /* Instrument Rule — Radius max 6px */
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 6px;
       /* Low-latency animation tokens */
       --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.0);
       --ease-out: cubic-bezier(0.0, 0.0, 0.2, 1.0);
