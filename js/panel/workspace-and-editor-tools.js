@@ -65,6 +65,7 @@
       if (saved === 'song' || saved === 'songs') { setDockSceneTab('song'); return; }
       if (saved === 'bible') { setDockSceneTab('bible'); return; }
       if (saved === 'schedule') { setSidebarTab('schedule'); updateActivityBarUi('schedule'); return; }
+      if (saved === 'media') { setSidebarTab('media'); return; }
       setDockSceneTab('bible');
     }
 
@@ -95,6 +96,7 @@
     }
 
     function getWorkspaceLabelText(tab = sidebarTab) {
+      if (tab === 'media') return 'Media';
       if (tab === 'songs') return 'Song';
       if (tab === 'schedule') return 'Setlist';
       return 'Bible';
@@ -2409,10 +2411,15 @@
       const isSongsTab = sidebarTab === 'songs';
       const isBibleTab = sidebarTab === 'bible';
       const isScheduleTab = sidebarTab === 'schedule';
+      const isMediaTab = sidebarTab === 'media';
 
-      if (addBtn) addBtn.style.display = (!focused || isSongsTab) ? '' : 'none';
+      // Media uses the proper import button (#btn-import) instead of the song "+" button.
+      if (addBtn) {
+        addBtn.style.display = isMediaTab ? 'none' : ((!focused || isSongsTab) ? '' : 'none');
+        addBtn.title = 'Create New Song';
+      }
       if (modeSwitch) modeSwitch.style.display = (!focused || !isScheduleTab) ? '' : 'none';
-      if (importBtn) importBtn.style.display = (!focused || isSongsTab) ? '' : 'none';
+      if (importBtn) importBtn.style.display = (isMediaTab || !focused || isSongsTab) ? '' : 'none';
       if (bibleToolWrap) bibleToolWrap.style.display = (!focused || isBibleTab) ? '' : 'none';
       if (annotateWrap) annotateWrap.style.display = (!focused || isSongsTab || isBibleTab) ? '' : 'none';
       if (presetBtn) presetBtn.style.display = (!focused || !isScheduleTab) ? '' : 'none';

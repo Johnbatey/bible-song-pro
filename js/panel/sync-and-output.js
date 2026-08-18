@@ -115,15 +115,39 @@
       }, 3000);
     }
 
+    // Displays persist the last message they saw (sync mirror) and drop anything whose seq
+    // is <= that. A counter restarting at 0 each launch would therefore have its first
+    // messages silently ignored, so the seq keeps climbing across restarts. A block is
+    // reserved up front to avoid a localStorage write per message.
+    const MESSAGE_SEQ_KEY = 'bsp_message_seq_hwm';
+    const MESSAGE_SEQ_BLOCK = 10000;
+    const CONTROL_SESSION_ID = `cs_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    let messageSeqReservedTo = 0;
+
+    function reserveMessageSeqBlock() {
+      messageSeqReservedTo = messageSeq + MESSAGE_SEQ_BLOCK;
+      try { localStorage.setItem(MESSAGE_SEQ_KEY, String(messageSeqReservedTo)); } catch (_) {}
+    }
+
     function nextSeq() {
+      if (!messageSeqReservedTo) {
+        let stored = 0;
+        try { stored = Number(localStorage.getItem(MESSAGE_SEQ_KEY)) || 0; } catch (_) {}
+        if (Number.isFinite(stored) && stored > messageSeq) messageSeq = stored;
+        reserveMessageSeqBlock();
+      }
       messageSeq += 1;
+      if (messageSeq >= messageSeqReservedTo) reserveMessageSeqBlock();
       return messageSeq;
     }
 
     function sendSyncState() {
       const sceneLayers = getOutputSceneLayers();
       const hasActiveLiveState = !!(isLive && livePointer && lastLiveState && lastLiveState.kind === 'update');
-      const state = hasActiveLiveState
+      const hasActiveMediaState = !!(lastLiveState && lastLiveState.kind === 'media' && lastLiveState.payload);
+      const state = hasActiveMediaState
+        ? { kind: 'media', payload: { ...lastLiveState.payload, sceneLayers } }
+        : hasActiveLiveState
         ? { kind: 'update', payload: { ...lastLiveState.payload, sceneLayers } }
         : { kind: 'clear', sceneLayers };
       const msg = {
@@ -1581,6 +1605,9 @@
     }
 
     function broadcastMessage(msg) {
+      // Seq only means anything within one control session; the session id lets a display
+      // tell a fresh panel apart from the one whose messages it last mirrored.
+      if (msg && typeof msg === 'object' && !msg.session) msg.session = CONTROL_SESSION_ID;
       if (!isVmixMode() && channel) channel.postMessage(msg);
       relaySend(msg);
       if (isVmixMode() && window.BSPDesktop && typeof window.BSPDesktop.sendVmixOutputMessage === 'function') {
@@ -1683,6 +1710,66 @@
       schedulePersistAppState();
     }
 
+    function postMediaOutputMessage(type, payload = {}, opts = {}) {
+      if (isRestoringBackup) return;
+      applyProgramDisplaySource('lyrics');
+      const msg = {
+        type,
+        proto: 1,
+        sender: 'control',
+        ts: Date.now(),
+        seq: nextSeq(),
+        sceneLayers: getOutputSceneLayers(),
+        ...payload
+      };
+      broadcastMessage(msg);
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ source: 'bsp-panel-parent', message: msg }, '*');
+        }
+      } catch (_) {}
+      if (type === 'MEDIA_LOAD' || opts.persistState) {
+        isLive = false;
+        liveKind = 'media';
+        livePointer = null;
+        embeddedProgramDisplayState = { kind: 'media', payload: msg };
+        lastLiveState = { kind: 'media', payload: msg };
+        if (appState && appState.live) appState.live.lastLiveState = lastLiveState;
+        syncEmbeddedProgramDisplay();
+        syncStandaloneOutputDirect();
+        syncLsProjectionPreview();
+        schedulePersistAppState();
+      }
+    }
+
+    window.bspPostMediaLoad = function (payload) {
+      postMediaOutputMessage('MEDIA_LOAD', payload || {}, { persistState: true });
+    };
+
+    window.bspPostMediaClear = function () {
+      postClear({ fade: true, transitionDuration: getCurrentTransitionDuration() });
+    };
+
+    window.bspPostMediaRemote = function (payload) {
+      const cmd = payload && payload.cmd;
+      if (cmd === 'scrub') {
+        postMediaOutputMessage('MEDIA_REMOTE', { remote: { type: 'scrub', val: payload.val } });
+        return;
+      }
+      postMediaOutputMessage('MEDIA_REMOTE', { remote: { type: 'update', ...payload } });
+    };
+
+    window.bspPostMediaCoverPos = function (coverPos) {
+      if (embeddedProgramDisplayState.kind === 'media' && embeddedProgramDisplayState.payload) {
+        embeddedProgramDisplayState.payload.coverPos = coverPos;
+        embeddedProgramDisplayState.payload.media = {
+          ...(embeddedProgramDisplayState.payload.media || {}),
+          coverPos
+        };
+      }
+      postMediaOutputMessage('MEDIA_COVER_POS', { coverPos });
+    };
+
 
     function captureLiveRenderUiSnapshot() {
       const liveSettingsTab = (livePointer && livePointer.kind === 'songs') ? 'songs' : 'bible';
@@ -1704,8 +1791,6 @@
         ltRefTextTransform: liveProjection.ltRefTextTransform || document.getElementById('lt-ref-text-transform')?.value || ltRefTextTransform || 'uppercase',
         refFontSize: pickNumber(liveProjection.refFontSize, document.getElementById('ref-font-size-val')?.value || 32),
         refPositionFull: liveProjection.refPositionFull || document.getElementById('ref-position-full')?.value || 'top',
-        fullOffsetX: pickNumber(liveProjection.fullOffsetX, document.getElementById('full-offset-x')?.value || 0),
-        fullOffsetY: pickNumber(liveProjection.fullOffsetY, document.getElementById('full-offset-y')?.value || 0),
         transitionType: document.getElementById('song-transition-type')?.value || 'fade',
         animateBgTransitions: !!document.getElementById('animate-bg-transitions')?.checked,
         showVersion: liveProjection.showVersion != null ? !!liveProjection.showVersion : !!document.getElementById('show-version')?.checked,
@@ -2246,8 +2331,6 @@
         hAlignLTBibleVerse: ltHAlignBibleVerse,
         autoResizeFull: ui.autoResizeFull || 'none',
         refPositionFull: refPositionFull,
-        fullOffsetX: ui.fullOffsetX,
-        fullOffsetY: ui.fullOffsetY,
         autoResizeLT: autoResizeLT,
         dualVersionMode: !!dualSectionHtml,
         dualVersionSecondaryId: dualVersionSecondaryId || null,

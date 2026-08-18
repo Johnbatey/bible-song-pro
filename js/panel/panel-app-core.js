@@ -59,8 +59,6 @@
       'autoResizeFull',
       'autoResizeLT',
       'refPositionFull',
-      'fullOffsetX',
-      'fullOffsetY',
       'hAlignFullRef',
       'hAlignFull',
       'vAlignFull',

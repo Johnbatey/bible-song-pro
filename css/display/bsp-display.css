@@ -28,6 +28,85 @@
       font-family: 'Montserrat', sans-serif;
     }
 
+    #media-stage {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: transparent;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    #media-stage.media-active {
+      opacity: 1;
+    }
+
+    .bsp-media-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      z-index: 1;
+      will-change: opacity, transform;
+    }
+
+    .bsp-media-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: blur(40px) brightness(.52);
+      transform: scale(1.08);
+      z-index: -1;
+    }
+
+    .bsp-media-el {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: 50% 50%;
+      display: block;
+      transform-origin: center center;
+    }
+
+    .bsp-media-audio-card {
+      width: min(780px, 80%);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 14px;
+      background: rgba(10,10,10,.78);
+      box-shadow: 0 16px 60px rgba(0,0,0,.55);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bsp-media-audio-card img {
+      width: 100%;
+      border-radius: 10px;
+      display: block;
+    }
+
+    .bsp-media-audio-title {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      color: #ddd;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     #bg-layer {
       position: absolute;
       top: 0;

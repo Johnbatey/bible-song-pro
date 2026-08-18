@@ -25,11 +25,22 @@ Use `BSP_display.html` as the matching display/browser source in your OBS scene.
 
 ### Bible
 
+Bible Song Pro ships with four versions — KJV, NKJV, NLT and NASB. They install
+themselves the first time you open the panel (in the OBS dock as well as the desktop
+app), so the `Bible` tab is ready to use straight away.
+
 1. Open the `Bible` tab.
 2. Choose a Bible version.
 3. Search for a reference or browse book/chapter.
 4. Adjust grouping, display mode, and styling as needed.
 5. Send the selection live.
+
+To add another version, either use `Import` in the panel (any XML Bible), or drop the
+XML file into `bibles/source/` and run `npm run bibles:build` — it will then load
+automatically for everyone using that folder.
+
+If you delete one of the bundled versions, it stays deleted; it will not come back on
+the next launch.
 
 ### Setlist
 
@@ -54,6 +65,9 @@ Use `Settings` to configure:
 
 - The plugin is designed for OBS dock use.
 - Keep the display file and panel file together in the same folder.
+- Keep the `bibles` folder next to `Bible Song Pro panel.html`. That is where the bundled
+  Bible versions are loaded from; if it is missing, the panel still runs but starts with
+  no Bible versions.
 - If you move the files, update the path in OBS.
 - Some browser security settings in OBS may affect local file access depending on your setup.
 

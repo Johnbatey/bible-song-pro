@@ -12,7 +12,6 @@ files:
   - Bible Song Pro panel.html
   - BSP_display.html
   - js/**/*
-  - css/**/*
   - assets/**/*
   - electron/resources/**/*
   - package.json

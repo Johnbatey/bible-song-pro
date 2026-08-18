@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="css/panel/00-panel-base.css">
   <link rel="stylesheet" href="css/panel/20-annotate-tools.css">
   <link rel="stylesheet" href="css/panel/21-ai-helper-toolbar.css">
+  <link rel="stylesheet" href="css/panel/30-media-workspace.css">
   <link rel="stylesheet" href="css/panel/90-obs-isolated-mode.css">
   <link rel="stylesheet" href="css/panel/91-live-scripture-hud.css">
 </head>
@@ -261,6 +262,7 @@
         <div class="tab active" id="tab-bible" onclick="setSidebarTab('bible')" data-i18n="ui_tab_bible">Bible</div>
         <div class="tab" id="tab-songs" onclick="setSidebarTab('songs')" data-i18n="ui_tab_songs">Songs</div>
         <div class="tab" id="tab-schedule" onclick="setSidebarTab('schedule')" data-i18n="ui_tab_setlist">Setlist</div>
+        <div class="tab" id="tab-media" onclick="setSidebarTab('media')">Media</div>
       </div>
 
       <div class="search-container">
@@ -282,6 +284,16 @@
 
       <div id="version-bar"></div>
       <div id="song-list"></div>
+      <div id="media-sidebar-panel">
+        <div class="media-search-tools">
+          <input type="text" id="media-search-in" class="media-input" placeholder="Search media..." oninput="bspMedia.render()" autocomplete="off">
+          <input type="range" id="media-zoom" class="media-slider" min="30" max="100" value="95" oninput="bspMedia.render()" title="Thumbnail size">
+        </div>
+        <div id="media-thumb-list" class="media-thumb-list"></div>
+        <input type="file" id="media-file-input" multiple hidden accept="image/*,video/*,audio/*,.pdf,.pptx,.docx,.deck" onchange="bspMedia.handleFiles(this.files); this.value=''">
+        <input type="file" id="media-deck-input" hidden accept=".deck,application/json" onchange="bspMedia.importDeck(this.files[0]); this.value=''">
+        <div id="media-context-menu" class="media-context-menu" role="menu" aria-hidden="true"></div>
+      </div>
     </div>
     <div id="sidebar-width-handle"><div class="grip"></div></div>
     <button type="button" id="sidebar-quick-actions-btn" aria-label="Quick actions" data-i18n-aria-label="ui_quick_actions" title="Quick actions" data-i18n-title="ui_quick_actions" onclick="toggleSidebarQuickActions()"><span>Quick</span></button>
@@ -292,7 +304,31 @@
 
     <div id="main">
       <div class="header-toolbar">
-        <button class="add-btn" onclick="openModal('newSongModal')">+</button>
+        <button class="add-btn" id="btn-toolbar-add" onclick="handleToolbarAddClick()" title="Add">+</button>
+        <div id="media-toolbar-tools">
+          <button class="btn toolbar-icon-btn" type="button" onclick="bspMedia.undo()" title="Undo" aria-label="Undo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>
+          </button>
+          <button class="btn toolbar-icon-btn" type="button" onclick="bspMedia.redo()" title="Redo" aria-label="Redo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 7v6h-6"/><path d="M21 13a9 9 0 1 1-3-7.7L21 8"/></svg>
+          </button>
+          <button class="btn toolbar-icon-btn" type="button" onclick="bspMedia.exportDeck()" title="Save deck" aria-label="Save deck">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          </button>
+          <button class="btn toolbar-icon-btn" type="button" onclick="document.getElementById('media-deck-input').click()" title="Open deck" aria-label="Open deck">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </button>
+          <button class="btn toolbar-icon-btn media-toolbar-danger" type="button" onclick="bspMedia.clearAll()" title="Clear media list" aria-label="Clear media list">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+          <button class="btn toolbar-icon-btn" id="btn-media-fx" type="button" onclick="bspMedia.toggleFxPopover(event)" title="Transitions" aria-label="Transitions">
+            <span style="font-family:'Georgia',serif;font-style:italic;font-size:16px;font-weight:900;line-height:1">fx</span>
+          </button>
+          <button class="btn toolbar-icon-btn media-toolbar-text-btn" id="btn-media-fit" type="button" onclick="bspMedia.toggleFitPopover(event)" title="Fit and output" aria-label="Fit and output">Fit</button>
+          <button class="btn toolbar-icon-btn" type="button" onclick="bspMedia.resetCoverPosition()" title="Reset output fill" aria-label="Reset output fill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+          </button>
+        </div>
         <div class="toolbar-mode-switch">
           <button class="t-btn" id="mode-text" onclick="setEditorMode('text')"><span data-i18n="ui_mode_text">Text</span></button>
           <button class="t-btn active" id="mode-btn" onclick="setEditorMode('btn')"><span data-i18n="ui_mode_buttons">Buttons</span></button>
@@ -401,6 +437,47 @@
           </label>
         </div>
       </div>
+      <div id="media-fx-popover" class="preset-popover media-popover" role="dialog" aria-label="Media transitions">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:8px">
+          <div class="workspace-state-chip">Media</div>
+        </div>
+        <div class="settings-field">
+          <label class="settings-label" style="margin-bottom:6px" for="media-transition" data-i18n="common_transition">Transition</label>
+          <select id="media-transition" class="settings-select" onchange="bspMedia.onOutputOptionChange()">
+            <option value="fade">Fade</option>
+            <option value="cut">Cut</option>
+            <option value="slide">Slide</option>
+            <option value="zoom">Zoom</option>
+          </select>
+        </div>
+      </div>
+      <div id="media-fit-popover" class="preset-popover media-popover" role="dialog" aria-label="Media fit">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:8px">
+          <div class="workspace-state-chip">Media</div>
+        </div>
+        <div class="settings-field">
+          <label class="settings-label" style="margin-bottom:6px" for="media-fit">Fit Mode</label>
+          <select id="media-fit" class="settings-select" onchange="bspMedia.onOutputOptionChange()">
+            <option value="contain">Contain</option>
+            <option value="cover">Fill</option>
+            <option value="blur">Blur Fill</option>
+          </select>
+        </div>
+        <div class="settings-field" style="margin-top:10px">
+          <label class="settings-label" style="margin-bottom:6px" for="media-easing">Easing</label>
+          <select id="media-easing" class="settings-select" onchange="bspMedia.onOutputOptionChange()">
+            <option value="ease">Ease</option>
+            <option value="linear">Linear</option>
+            <option value="ease-in">In</option>
+            <option value="ease-out">Out</option>
+          </select>
+        </div>
+        <div class="settings-field" style="margin-top:10px">
+          <label class="settings-label" style="margin-bottom:6px" for="media-bg-color">Background Color</label>
+          <input type="color" id="media-bg-color" class="settings-select media-popover-color" value="#000000" onchange="bspMedia.onOutputOptionChange()">
+        </div>
+        <button class="btn" type="button" style="width:100%;margin-top:12px;padding:8px 10px;font-size:11px;background:var(--bg-dark)" onclick="bspMedia.resetCoverPosition()">Reset Output Fill</button>
+      </div>
       <div id="output-popover" class="preset-popover output-popover">
         <h4 data-i18n="output_screens">Output Screens</h4>
         <div id="output-screen-list-popover" class="output-screen-list-popover">
@@ -450,6 +527,44 @@
             <textarea id="song-translation-editor" placeholder="Translated lyrics will appear here..." style="min-height:140px;width:100%;box-sizing:border-box;padding:10px 12px;background:#0a0d14;color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:inherit;resize:vertical" oninput="handleSongSecondaryLyricsInput()"></textarea>
           </div>
           <div id="lyric-buttons"></div>
+        </div>
+        <div id="media-workspace">
+          <div class="media-preview-stage">
+            <div id="media-preview-frame">
+              <div class="media-preview-placeholder">Add media to begin.</div>
+            </div>
+            <div class="media-preview-tools">
+              <button class="media-icon-btn" id="media-preview-mute" type="button" onclick="bspMedia.togglePreviewMute()" title="Preview mute" aria-label="Preview mute">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19 6a9 9 0 0 1 0 12"/></svg>
+              </button>
+            </div>
+            <div id="media-pan-overlay" class="media-pan-overlay">
+              <div class="media-pan-hint">Fill mode: drag to reframe, scroll to move up/down.</div>
+            </div>
+            <div class="media-output-controls">
+              <div class="media-scrub" onclick="bspMedia.startScrub(event)"><div id="media-scrub-progress"></div></div>
+              <div class="media-mini-controls" id="media-mini-controls-main">
+                <div class="media-tool-group" style="justify-content:center;width:100%">
+                  <button class="media-icon-btn" type="button" onclick="bspMedia.vAction('seek',0)" title="Restart" aria-label="Restart">⏮</button>
+                  <button class="media-icon-btn" type="button" onclick="bspMedia.vAction('toggle')" title="Play/Pause" aria-label="Play/Pause">▶</button>
+                  <input id="media-vol-ui" class="media-slider" style="width:90px" type="range" min="0" max="1" step="0.1" value="0.8" oninput="bspMedia.vAction('volume', this.value)" title="Output volume">
+                  <button class="media-icon-btn" type="button" data-media-loop onclick="bspMedia.vAction('loop')" title="Loop" aria-label="Loop">↻</button>
+                </div>
+              </div>
+              <div class="media-nav-row">
+                <button class="btn media-clear-btn" type="button" onclick="bspMedia.clearOutput()" title="Clear output"><span data-i18n="common_clear">Clear</span></button>
+                <button class="btn btn-live media-live-btn" type="button" onclick="bspMedia.project()"><span data-i18n="common_project_live">Project Live</span></button>
+                <div class="media-nav-arrows">
+                  <button class="btn media-arrow-btn" type="button" onclick="bspMedia.nav(-1, true)" title="Previous" aria-label="Previous">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                  </button>
+                  <button class="btn media-arrow-btn" type="button" onclick="bspMedia.nav(1, true)" title="Next" aria-label="Next">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1066,6 +1181,7 @@
       <button class="page-nav-btn active" data-side-tab="bible" onclick="switchBottomNavSidebarTab('bible')" data-i18n="ui_tab_bible">Bible</button>
       <button class="page-nav-btn" data-side-tab="songs" onclick="switchBottomNavSidebarTab('songs')" data-i18n="ui_tab_songs">Songs</button>
       <button class="page-nav-btn" data-side-tab="schedule" onclick="switchBottomNavSidebarTab('schedule')" data-i18n="ui_tab_setlist">Setlist</button>
+      <button class="page-nav-btn" data-side-tab="media" onclick="switchBottomNavSidebarTab('media')">Media</button>
     </div>
   </div>
   <div id="footer-bible-version-popover" aria-hidden="true"></div>
@@ -1097,7 +1213,7 @@
 
   <!-- Settings Modal -->
   <div id="settingsModal" class="modal-overlay">
-    <div class="modal-content" style="width:1160px;max-width:96vw;display:flex;flex-direction:column;height:82vh;max-height:82vh;padding:0;overflow:hidden">
+    <div class="modal-content" style="width:946px;max-width:92vw;display:flex;flex-direction:column;height:80vh;max-height:80vh;padding:0;overflow:hidden">
       <!-- Title bar -->
       <div class="settings-modal-title" style="display:flex;align-items:center;gap:10px;flex-shrink:0">
         <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -1106,6 +1222,7 @@
            <button class="seg-btn active" id="settings-target-bible" type="button" onclick="handleSettingsTargetChange('bible')">Bible</button>
           <button class="seg-btn" id="settings-target-songs" type="button" onclick="handleSettingsTargetChange('songs')">Songs</button>
           <button class="seg-btn" id="settings-target-schedule" type="button" onclick="handleSettingsTargetChange('schedule')">Setlist</button>
+          <button class="seg-btn" id="settings-target-media" type="button" onclick="handleSettingsTargetChange('media')">Media</button>
         </div>
         <span style="flex:1"></span>
         <button class="btn settings-close-btn" onclick="closeModal('settingsModal')">✕</button>
@@ -1146,6 +1263,10 @@
             <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
             <span>Setlist</span>
           </div>
+          <div class="sm-sidebar-item" data-sm-tab="media" onclick="switchSettingsTab('media')" style="display:none">
+            <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><polygon points="10 8 15 10 10 12 10 8"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>Media</span>
+          </div>
           <div class="sm-sidebar-item" data-sm-tab="presets" onclick="switchSettingsTab('presets')">
             <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
             <span data-i18n="settings_presets">Plugin Settings</span>
@@ -1156,13 +1277,12 @@
           </div>
           <div class="sm-sidebar-item" data-sm-tab="updates" onclick="switchSettingsTab('updates')">
             <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36M3.34 15H10M14 20H3.29a9 9 0 0 0 14.85-3.36"/></svg>
-            <span>Updates/Feedback</span>
+            <span>Updates</span>
           </div>
-          <div class="sm-sidebar-item" data-sm-tab="tutorial" onclick="switchSettingsTab('tutorial')">
-            <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h10"/></svg>
-            <span>Tutorial</span>
+          <div class="sm-sidebar-item" data-sm-tab="feedback" onclick="switchSettingsTab('feedback')">
+            <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+            <span>Feedback</span>
           </div>
-
           <!-- Footer -->
           <div style="margin-top:auto;padding:8px 12px">
             <div class="ab-popup-sep" style="margin:4px 0 8px"></div>
@@ -1300,45 +1420,6 @@
               </div>
               <input type="range" id="pad-lr-full" min="0" max="20" step="1" value="5" class="settings-slider" oninput="updateSliderValue(this,'%');onAnyControlChange()">
             </div>
-            <div class="settings-field" style="margin-top:12px">
-              <label class="settings-label">FS Position</label>
-              <div class="position-offset-group">
-                <div class="position-offset-row">
-                  <span class="position-offset-axis">X.</span>
-                  <div class="position-offset-control">
-                    <div class="position-offset-input-wrap">
-                      <input type="number" id="full-offset-x" class="position-offset-input" min="-1200" max="1200" step="5" value="0">
-                      <span class="position-offset-unit">px</span>
-                    </div>
-                    <div class="position-offset-stepper">
-                      <button type="button" onclick="stepPositionOffset('full-offset-x', 5)" aria-label="Increase full screen horizontal offset">
-                        <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M2 6L6 2L10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                      </button>
-                      <button type="button" onclick="stepPositionOffset('full-offset-x', -5)" aria-label="Decrease full screen horizontal offset">
-                        <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M2 2L6 6L10 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="position-offset-row">
-                  <span class="position-offset-axis">Y.</span>
-                  <div class="position-offset-control">
-                    <div class="position-offset-input-wrap">
-                      <input type="number" id="full-offset-y" class="position-offset-input" min="-1200" max="1200" step="5" value="0">
-                      <span class="position-offset-unit">px</span>
-                    </div>
-                    <div class="position-offset-stepper">
-                      <button type="button" onclick="stepPositionOffset('full-offset-y', 5)" aria-label="Increase full screen vertical offset">
-                        <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M2 6L6 2L10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                      </button>
-                      <button type="button" onclick="stepPositionOffset('full-offset-y', -5)" aria-label="Decrease full screen vertical offset">
-                        <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M2 2L6 6L10 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
             <div class="settings-row" style="margin-top:12px">
               <div class="settings-field" style="flex:1" id="full-ref-position-field">
                 <label class="settings-label" data-i18n="settings_reference_position">Ref. Position</label>
@@ -1347,9 +1428,7 @@
                   <option value="bottom" data-i18n="settings_ref_bottom_after_verse">Bottom - After Verse</option>
                 </select>
               </div>
-              <div class="settings-field" style="display:flex;align-items:flex-end;justify-content:flex-end">
-                <button class="btn btn-small" onclick="resetFullPosition()" style="background:var(--warning);color:#111;padding:8px 16px;font-size:11px;font-weight:700;text-shadow:none">Reset Position</button>
-              </div>
+              <div class="settings-field"></div>
             </div>
           </div>
         </div>
@@ -1501,7 +1580,7 @@
           <input type="range" id="lt-border-radius" min="0" max="120" step="1" value="0" class="settings-slider" oninput="updateSliderValue(this,'px');onAnyControlChange()">
         </div>
         <div class="settings-field" style="margin-top:12px">
-          <label class="settings-label">LT Position</label>
+          <label class="settings-label">Position</label>
           <div class="position-offset-group">
             <div class="position-offset-row">
               <span class="position-offset-axis">X.</span>
@@ -2015,6 +2094,75 @@
             </div>
           </div>
         </div>
+        <!-- Tab: Media -->
+        <div class="sm-tab-panel" data-sm-panel="media">
+          <div class="sm-panel-title">Media</div>
+          <div class="settings-category-content">
+            <div class="settings-row">
+              <div class="settings-field" style="flex:1;min-width:180px">
+                <label class="settings-label" for="media-set-fit">Default Fit Mode</label>
+                <select id="media-set-fit" class="settings-select" onchange="bspMedia.onSettingsChange()">
+                  <option value="contain">Contain</option>
+                  <option value="cover">Fill</option>
+                  <option value="blur">Blur Fill</option>
+                </select>
+              </div>
+              <div class="settings-field" style="flex:1;min-width:180px">
+                <label class="settings-label" for="media-set-transition">Default Transition</label>
+                <select id="media-set-transition" class="settings-select" onchange="bspMedia.onSettingsChange()">
+                  <option value="fade">Fade</option>
+                  <option value="cut">Cut</option>
+                  <option value="slide">Slide</option>
+                  <option value="zoom">Zoom</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="settings-row" style="margin-top:16px">
+              <div class="settings-field" style="flex:1;min-width:180px">
+                <label class="settings-label" for="media-set-easing">Default Easing</label>
+                <select id="media-set-easing" class="settings-select" onchange="bspMedia.onSettingsChange()">
+                  <option value="ease">Ease</option>
+                  <option value="linear">Linear</option>
+                  <option value="ease-in">In</option>
+                  <option value="ease-out">Out</option>
+                </select>
+              </div>
+              <div class="settings-field" style="flex:1;min-width:180px">
+                <label class="settings-label" for="media-set-bg-color">Default Background Color</label>
+                <input type="color" id="media-set-bg-color" class="settings-select media-popover-color" value="#000000" onchange="bspMedia.onSettingsChange()">
+              </div>
+            </div>
+
+            <div class="slider-container" style="margin-top:16px">
+              <div class="slider-header">
+                <label class="settings-label" for="media-set-volume">Default Output Volume</label>
+                <span class="slider-value" id="media-set-volume-value">80%</span>
+              </div>
+              <input type="range" id="media-set-volume" class="settings-slider" min="0" max="1" step="0.05" value="0.8" oninput="bspMedia.onSettingsChange()">
+            </div>
+
+            <label class="mini-toggle" style="width:100%;justify-content:space-between;margin-top:20px">
+              <span>Loop Media By Default</span>
+              <input type="checkbox" id="media-set-loop" onchange="bspMedia.onSettingsChange()">
+            </label>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:8px">
+              New media plays on repeat until you turn looping off from the preview transport controls.
+            </div>
+
+            <label class="mini-toggle" style="width:100%;justify-content:space-between;margin-top:20px">
+              <span>Restore Last Media Deck</span>
+              <input type="checkbox" id="media-set-restore-session" checked onchange="bspMedia.onSettingsChange()">
+            </label>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:8px">
+              Reopen the media list from your last session when Bible Song Pro starts. Turn this off to always begin with an empty media workspace.
+            </div>
+
+            <div style="margin-top:20px;padding:12px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.03);font-size:11px;color:var(--text-secondary);line-height:1.45">
+              These defaults apply to the Media workspace only. They seed the toolbar FX and Fit popovers each time Bible Song Pro starts, and leave Bible, Song, and Setlist typography untouched.
+            </div>
+          </div>
+        </div>
         <!-- Tab: Presets -->
         <div class="sm-tab-panel" data-sm-panel="presets">
           <div class="sm-panel-title" data-i18n="settings_presets">Plugin Settings</div>
@@ -2157,27 +2305,38 @@
           </div>
         </div>
         <div class="sm-tab-panel" data-sm-panel="updates">
-          <div class="sm-panel-title">Updates/Feedback</div>
+          <div class="sm-panel-title">Updates</div>
           <div class="settings-category-content">
-            <div class="settings-field" style="margin-bottom:12px">
-              <div id="settings-update-status" style="font-size:12px;color:var(--text);padding:8px;background:rgba(107,122,148,0.15);border-radius:4px;margin-bottom:12px;text-align:center">Update status: idle</div>
-              <div id="settings-update-notes" style="font-size:11px;color:#6b7a94;padding:10px;background:rgba(107,122,148,0.08);border-left:3px solid var(--accent);border-radius:4px;line-height:1.5;display:none;white-space:pre-wrap;word-break:break-word;margin-bottom:12px;max-height:150px;overflow-y:auto"></div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center">
-                <button class="btn" id="settings-update-check-btn" type="button" style="padding:8px 14px;font-size:11px">Check for Updates</button>
-                <button class="btn" id="settings-update-download-btn" type="button" style="padding:8px 14px;font-size:11px;display:none;background:var(--accent)">Download Update</button>
-                <button class="btn" id="settings-update-install-btn" type="button" style="padding:8px 14px;font-size:11px;display:none;background:var(--accent)">Install & Restart</button>
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(107,122,148,0.3)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <div style="font-weight:600;font-size:13px;color:var(--text)">Application Updates</div>
+                  <span style="font-size:11px;color:#6b7a94">v2.1.0</span>
+                </div>
+                <div style="font-size:12px;color:#6b7a94;line-height:1.5;margin-bottom:12px">Keep Bible Song Pro up to date with the latest features, improvements, and bug fixes. Updates are automatically checked periodically.</div>
+                <div id="settings-update-status" style="font-size:12px;color:var(--text);padding:8px;background:rgba(107,122,148,0.15);border-radius:4px;margin-bottom:12px;text-align:center">Update status: idle</div>
+                <div id="settings-update-notes" style="font-size:11px;color:#6b7a94;padding:10px;background:rgba(107,122,148,0.08);border-left:3px solid var(--accent);border-radius:4px;line-height:1.5;display:none;white-space:pre-wrap;word-break:break-word;margin-bottom:12px;max-height:150px;overflow-y:auto"></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button class="btn" id="settings-update-check-btn" type="button" style="padding:8px 14px;font-size:11px">Check for Updates</button>
+                  <button class="btn" id="settings-update-download-btn" type="button" style="padding:8px 14px;font-size:11px;display:none;background:var(--accent)">Download Update</button>
+                  <button class="btn" id="settings-update-install-btn" type="button" style="padding:8px 14px;font-size:11px;display:none;background:var(--accent)">Install & Restart</button>
+                </div>
+              </div>
+              <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(107,122,148,0.2)">
+                <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:8px">More Information</div>
+                <div style="font-size:12px;color:#6b7a94;line-height:1.6;display:flex;flex-direction:column;gap:8px">
+                  <div>Updates are released regularly on GitHub with detailed release notes about what's new and improved.</div>
+                  <div style="display:flex;gap:8px;margin-top:4px">
+                    <a href="https://github.com/Johnbatey/bible-song-pro-obs/releases" target="_blank" rel="noreferrer" style="color:var(--accent);text-decoration:none;font-size:11px">View Release History →</a>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="settings-field">
-              <label class="settings-label">Release Channel</label>
-              <div style="font-size:11px;color:var(--text-secondary);line-height:1.5">
-                <div>Updates are released on GitHub with detailed release notes.</div>
-                <a class="settings-footer-link" href="https://github.com/Johnbatey/bible-song-pro-obs/releases/latest" target="_blank" rel="noreferrer">Open latest release page</a>
-              </div>
-            </div>
-            <div class="settings-field" style="margin-top:20px">
-              <div class="settings-label">Feedback</div>
-            </div>
+          </div>
+        </div>
+        <div class="sm-tab-panel" data-sm-panel="feedback">
+          <div class="sm-panel-title">Feedback</div>
+          <div class="settings-category-content">
             <div class="feedback-card">
               <div id="feedback-success-overlay" class="feedback-success-overlay" aria-hidden="true">
                 <div class="feedback-success-panel">
@@ -2206,26 +2365,6 @@
                   <button type="button" class="btn feedback-btn-primary" onclick="submitFeedbackIssue()">Send</button>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-        <div class="sm-tab-panel" data-sm-panel="tutorial">
-          <div class="settings-category-content tutorial-shell" id="tutorial-shell">
-            <div class="tutorial-topbar">
-              <div class="tutorial-nav-shell" id="tutorial-nav-shell">
-                <span class="tutorial-nav-indicator" id="tutorial-nav-indicator" aria-hidden="true"></span>
-                <button type="button" class="tutorial-nav-btn active" data-tutorial-platform="youtube">YouTube</button>
-                <button type="button" class="tutorial-nav-btn" data-tutorial-platform="instagram">Instagram</button>
-                <button type="button" class="tutorial-nav-btn" data-tutorial-platform="tiktok">TikTok</button>
-              </div>
-            </div>
-            <div class="tutorial-banner">
-              <div class="tutorial-banner-title" id="tutorial-banner-title">Bible Song Pro YouTube Tutorials</div>
-              <div class="tutorial-banner-subtitle" id="tutorial-banner-subtitle">Learn the fastest ways to build polished scripture and lyric screens for your services.</div>
-            </div>
-            <div class="tutorial-scroll-wrap">
-              <div id="tutorial-status" class="tutorial-status">Fetching tutorial videos...</div>
-              <div id="tutorial-grid" class="tutorial-grid"></div>
             </div>
           </div>
         </div>
@@ -3398,7 +3537,9 @@
   <script src="js/panel/settings-and-controls.js"></script>
   <script src="js/panel/sidebar-and-workspace.js"></script>
   <script src="js/panel/sync-and-output.js"></script>
-  <script src="js/panel/tutorial-hub.js"></script>
+  <script src="js/vendor/pdf.min.js"></script>
+  <script src="js/vendor/jszip.min.js"></script>
+  <script src="js/panel/media-workspace.js"></script>
   <script src="js/panel/bootstrap-and-init.js"></script>
   <script src="js/panel/obs-isolated-layout.js"></script>
 

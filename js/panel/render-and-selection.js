@@ -4,6 +4,7 @@
       if (!inp) return;
       if (sidebarTab === 'bible') inp.placeholder = t('ui_search_bible');
       else if (sidebarTab === 'schedule') inp.placeholder = t('ui_search_setlist');
+      else if (sidebarTab === 'media') inp.placeholder = 'Search media...';
       else inp.placeholder = t('ui_search_songs');
       updateBibleSearchToolsVisibility();
       if (mirror) mirror.placeholder = inp.placeholder;
@@ -818,6 +819,15 @@
     }
 
     function triggerImport() {
+      if ((typeof sidebarTab !== 'undefined' && sidebarTab === 'media') || document.body.dataset.sidebarTab === 'media') {
+        if (window.bspMedia && typeof window.bspMedia.openFilePicker === 'function') {
+          window.bspMedia.openFilePicker();
+        } else {
+          const mediaInput = document.getElementById('media-file-input');
+          if (mediaInput) mediaInput.click();
+        }
+        return;
+      }
       configureImportAccept();
       document.getElementById('import-file').click();
     }

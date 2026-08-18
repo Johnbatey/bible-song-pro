@@ -68,12 +68,13 @@
       if (useFocusedWorkspaceControls && FOCUSED_WORKSPACE_TABS.includes(prevTab)) {
         saveFocusedWorkspaceControlsForTab(prevTab);
       }
-      activeWorkspaceTab = (tab === 'songs') ? 'song' : ((tab === 'schedule') ? 'schedule' : 'bible');
+      activeWorkspaceTab = (tab === 'songs') ? 'song' : ((tab === 'schedule') ? 'schedule' : ((tab === 'media') ? 'media' : 'bible'));
       saveWorkspaceTabPreference(activeWorkspaceTab);
       document.body.dataset.sidebarTab = tab;
       if (tab === 'songs') updateDockSceneTabUi('song');
       if (tab === 'bible') updateDockSceneTabUi('bible');
       if (tab === 'schedule') updateActivityBarUi('schedule');
+      if (tab === 'media') updateActivityBarUi(activeWorkspaceTab || 'media');
       if (prevTab === 'bible') {
         lastBibleWorkspaceSelection = captureCurrentBibleSelection();
       } else if (prevTab === 'songs') {
@@ -85,7 +86,10 @@
       buttonContextTab = tab;
       if (typeof updateWorkspaceStateLabels === 'function') updateWorkspaceStateLabels(tab);
       scheduleSidebarQuickActionsRender({ immediate: sidebarQuickActionsOpen, forceRender: sidebarQuickActionsOpen });
-      if (normalizeSettingsTargetTab(settingsTargetTab) === 'follow') {
+      if (normalizeSettingsTargetTab(settingsTargetTab) === 'follow' && typeof setMediaSettingsTargetActive === 'function') {
+        setMediaSettingsTargetActive(tab === 'media');
+      }
+      if (tab !== 'media' && normalizeSettingsTargetTab(settingsTargetTab) === 'follow') {
         applyProjectionSettingsProfileForTab(tab, { triggerChange: false });
         updateSettingsTargetControl();
       }
@@ -147,8 +151,16 @@
       }
       enforceBibleModeRules();
       updateSearchPlaceholder();
+      if (tab === 'media') {
+        if (window._restoreSidebarTabHeight) window._restoreSidebarTabHeight();
+        positionSidebarQuickActions();
+        refreshWorkspaceLayoutUi();
+        if (typeof window.bspMediaTabActivated === 'function') window.bspMediaTabActivated();
+        saveToStorageDebounced();
+        return;
+      }
       renderVersionBar();
-      renderSongs();
+      if (tab !== 'media') renderSongs();
       let restoredButtonState = false;
       const restoredFocusedSelection = isFocusedWorkspaceMode()
         ? restoreWorkspaceSelectionForTab(tab, pendingBibleSelection)
@@ -166,10 +178,10 @@
           lastBibleSelectionBeforeSchedule = null;
         }
       }
-      if (!restoredButtonState) {
+      if (!restoredButtonState && tab !== 'media') {
         updateButtonView();
       }
-      configureImportAccept();
+      if (tab !== 'media') configureImportAccept();
       setLtFontInputValue(getEffectiveLtFont());
       updateLtBibleVerseAlignVisibility();
       updateLtAlignButtons();

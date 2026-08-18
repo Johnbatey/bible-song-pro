@@ -32,18 +32,6 @@ function sendHelperUpdateStatus(payload) {
   win.webContents.send('helper:update-status', payload || {});
 }
 
-function isExpectedMissingReleaseMetadataError(error) {
-  const message = String((error && (error.stack || error.message || error)) || '').toLowerCase();
-  if (!message) return false;
-  return (
-    message.includes('latest-mac.yml') ||
-    message.includes('latest.yml') ||
-    message.includes('404') ||
-    message.includes('not found') ||
-    message.includes('enoent')
-  );
-}
-
 function setupHelperAutoUpdater() {
   if (!app.isPackaged) {
     sendHelperUpdateStatus({ state: 'dev-mode' });
@@ -85,10 +73,6 @@ function setupHelperAutoUpdater() {
   });
 
   autoUpdater.on('error', (error) => {
-    if (isExpectedMissingReleaseMetadataError(error)) {
-      sendHelperUpdateStatus({ state: 'none' });
-      return;
-    }
     sendHelperUpdateStatus({
       state: 'error',
       message: error && error.message ? String(error.message) : 'Update failed'
@@ -100,10 +84,6 @@ function scheduleHelperAutoUpdateCheck() {
   if (!app.isPackaged) return;
   setTimeout(() => {
     autoUpdater.checkForUpdates().catch((error) => {
-      if (isExpectedMissingReleaseMetadataError(error)) {
-        sendHelperUpdateStatus({ state: 'none' });
-        return;
-      }
       sendHelperUpdateStatus({
         state: 'error',
         message: error && error.message ? String(error.message) : 'Unable to check for updates'
@@ -339,10 +319,6 @@ app.whenReady().then(() => {
       await autoUpdater.checkForUpdates();
       return { ok: true };
     } catch (error) {
-      if (isExpectedMissingReleaseMetadataError(error)) {
-        sendHelperUpdateStatus({ state: 'none' });
-        return { ok: true };
-      }
       return { ok: false, error: error && error.message ? String(error.message) : 'Failed to check updates.' };
     }
   });

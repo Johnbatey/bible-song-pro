@@ -34,6 +34,7 @@
   <div id="display-container" class="mode-full">
     <div id="text-container" class="hardware-accelerated"></div>
   </div>
+  <div id="media-stage" aria-hidden="true"></div>
 
   <div id="debug-overlay" style="position: fixed; right: 12px; top: 12px; background: rgba(0,0,0,0.7); color: #fff; padding: 10px; border-radius: 8px; z-index: 9999; font-family: monospace; font-size: 12px; max-width: 440px; max-height: 60vh; overflow:auto; display: none;">
     <div id="debug-status" style="font-weight:bold;margin-bottom:6px">DEBUG: initializing...</div>
@@ -77,6 +78,9 @@
     let syncMirrorDbPromise = null;
     let syncMirrorPollTimer = null;
     let lastMirrorSeq = 0;
+    let mediaActiveLayer = null;
+    let mediaZCounter = 100;
+    let mediaCoverPos = { x: 50, y: 50 };
 
     // ===== TYPOGRAPHY =====
     function loadGoogleFontIfNeeded(family) {
@@ -152,6 +156,7 @@
     let rafId = null;
     let lastUpdateTime = 0;
     let lastSeq = 0;
+    let controlSession = null;
     let lastLtBgMode = 'solid';
     let lastBGMode = 'solid';
     let lastBgType = 'color';
@@ -248,6 +253,200 @@
           reject(err);
         }
       })).catch(() => null);
+    }
+
+    function getMediaStage() {
+      return document.getElementById('media-stage');
+    }
+
+    function clearMediaStage() {
+      const stage = getMediaStage();
+      if (!stage) return;
+      stage.innerHTML = '';
+      stage.classList.remove('media-active');
+      stage.style.backgroundColor = 'transparent';
+      mediaActiveLayer = null;
+    }
+
+    function hideLyricStageForMedia() {
+      elements.txt.style.opacity = '0';
+      elements.bg.style.opacity = '0';
+      elements.ltWrap.style.opacity = '0';
+      elements.customRefBox.style.display = 'none';
+      if (elements.customVersionBar) elements.customVersionBar.style.display = 'none';
+      elements.customMainBar.style.display = 'none';
+    }
+
+    function getMediaPlayable(layer) {
+      return layer ? layer.querySelector('video, audio') : null;
+    }
+
+    function getMediaElement(layer) {
+      return layer ? layer.querySelector('.bsp-media-el') : null;
+    }
+
+    function applyMediaCoverPos() {
+      const el = getMediaElement(mediaActiveLayer);
+      if (!el) return;
+      el.style.objectPosition = `${mediaCoverPos.x}% ${mediaCoverPos.y}%`;
+    }
+
+    function normalizeMediaCoverPos(raw) {
+      if (!raw) return { x: 50, y: 50 };
+      const x = clamp(Number(raw.x), 0, 100);
+      const y = clamp(Number(raw.y), 0, 100);
+      return {
+        x: Number.isFinite(x) ? x : 50,
+        y: Number.isFinite(y) ? y : 50
+      };
+    }
+
+    function handleMediaRemote(remote) {
+      if (!remote || !mediaActiveLayer) return;
+      const media = getMediaPlayable(mediaActiveLayer);
+      if (!media) return;
+      if (remote.type === 'scrub') {
+        if (media.duration && isFinite(media.duration)) {
+          try { media.currentTime = clamp(Number(remote.val) || 0, 0, 1) * media.duration; } catch (_) {}
+        }
+        return;
+      }
+      const cmd = remote.cmd;
+      if (cmd === 'toggle') {
+        if (media.paused) media.play().catch(() => {});
+        else media.pause();
+      } else if (cmd === 'loop') {
+        media.loop = !!remote.isLooping || !!remote.val;
+      } else if (cmd === 'volume') {
+        const volume = Number(remote.val ?? remote.volume);
+        if (Number.isFinite(volume)) media.volume = clamp(volume, 0, 1);
+      } else if (cmd === 'seek') {
+        try { media.currentTime = 0; } catch (_) {}
+      }
+    }
+
+    function handleMediaCoverPos(data) {
+      mediaCoverPos = normalizeMediaCoverPos(data && data.coverPos);
+      applyMediaCoverPos();
+    }
+
+    function handleMediaLoad(data) {
+      const stage = getMediaStage();
+      if (!stage) return;
+      hideLyricStageForMedia();
+      stage.classList.add('media-active');
+      stage.style.backgroundColor = (data.fit === 'contain') ? (data.bgColor || 'transparent') : 'transparent';
+
+      const transition = data.transition || 'fade';
+      const easing = data.easing || 'ease';
+      const duration = transition === 'cut' ? 0 : 600;
+      const dir = Number(data.dir) >= 0 ? 1 : -1;
+      const slide = data.slide || {};
+      const type = slide.type || 'img';
+      const src = slide.src || '';
+      const volume = Number.isFinite(Number(data.volume)) ? clamp(Number(data.volume), 0, 1) : 0.8;
+      mediaCoverPos = normalizeMediaCoverPos(data.coverPos);
+
+      const nextLayer = document.createElement('div');
+      nextLayer.className = 'bsp-media-layer';
+      nextLayer.style.zIndex = String(++mediaZCounter);
+      if (data.fit === 'blur' && type !== 'audio') {
+        const bg = document.createElement('img');
+        bg.className = 'bsp-media-bg';
+        bg.src = slide.thumb || src;
+        nextLayer.appendChild(bg);
+      }
+      nextLayer.style.transition = 'none';
+      if (transition === 'slide') {
+        nextLayer.style.opacity = '1';
+        nextLayer.style.transform = dir === 1 ? 'translateX(100%)' : 'translateX(-100%)';
+      } else if (transition === 'zoom') {
+        nextLayer.style.opacity = '0';
+        nextLayer.style.transform = 'scale(1.25)';
+      } else {
+        nextLayer.style.opacity = '0';
+        nextLayer.style.transform = 'translateZ(0)';
+      }
+
+      let started = false;
+      function activate() {
+        if (started) return;
+        started = true;
+        const old = mediaActiveLayer;
+        mediaActiveLayer = nextLayer;
+        applyMediaCoverPos();
+        if (duration === 0) {
+          nextLayer.style.transition = 'none';
+          nextLayer.style.opacity = '1';
+          nextLayer.style.transform = 'translateX(0) scale(1)';
+          if (old && old.parentNode) old.remove();
+          return;
+        }
+        requestAnimationFrame(() => {
+          nextLayer.style.transition = `opacity ${duration}ms ${easing}, transform ${duration}ms ${easing}`;
+          nextLayer.offsetHeight;
+          nextLayer.style.opacity = '1';
+          nextLayer.style.transform = 'translateX(0) scale(1)';
+          if (old) {
+            old.style.transition = `opacity ${duration}ms ${easing}, transform ${duration}ms ${easing}`;
+            if (transition === 'slide') {
+              old.style.transform = dir === 1 ? 'translateX(-100%)' : 'translateX(100%)';
+              old.style.opacity = '1';
+            } else if (transition === 'zoom') {
+              old.style.transform = 'scale(.85)';
+              old.style.opacity = '0';
+            } else {
+              old.style.opacity = '0';
+            }
+            setTimeout(() => { if (old.parentNode) old.remove(); }, duration + 80);
+          }
+        });
+      }
+
+      if (type === 'video') {
+        const video = document.createElement('video');
+        video.className = 'bsp-media-el';
+        video.src = src;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.loop = !!data.isLooping;
+        video.volume = volume;
+        video.style.objectFit = data.fit === 'cover' ? 'cover' : 'contain';
+        video.style.objectPosition = `${mediaCoverPos.x}% ${mediaCoverPos.y}%`;
+        video.onloadeddata = activate;
+        video.onerror = activate;
+        nextLayer.appendChild(video);
+      } else if (type === 'audio') {
+        const audio = document.createElement('audio');
+        audio.src = src;
+        audio.autoplay = true;
+        audio.loop = !!data.isLooping;
+        audio.volume = volume;
+        const card = document.createElement('div');
+        card.className = 'bsp-media-audio-card';
+        const img = document.createElement('img');
+        img.src = slide.thumb || '';
+        const title = document.createElement('div');
+        title.className = 'bsp-media-audio-title';
+        title.textContent = slide.name || 'Audio';
+        if (img.src) card.appendChild(img);
+        card.appendChild(title);
+        card.appendChild(audio);
+        nextLayer.appendChild(card);
+        audio.onloadeddata = activate;
+        audio.onerror = activate;
+        setTimeout(activate, 250);
+      } else {
+        const img = document.createElement('img');
+        img.className = 'bsp-media-el';
+        img.src = src;
+        img.style.objectFit = data.fit === 'cover' ? 'cover' : 'contain';
+        img.style.objectPosition = `${mediaCoverPos.x}% ${mediaCoverPos.y}%`;
+        img.onload = activate;
+        img.onerror = activate;
+        nextLayer.appendChild(img);
+      }
+      stage.appendChild(nextLayer);
     }
 
     function syncFromMirror(force = false) {
@@ -445,6 +644,16 @@
 
     function handleInboundMessage(d, source) {
       debug(`MSG(${source}): ` + (d.type || 'unknown') + (d.text ? ' — ' + (String(d.text).slice(0,80)) : ''));
+      // A restarted panel is a new control session with its own seq counter. Without this,
+      // lastSeq stays seeded from the mirrored state of the previous session and every
+      // fresh message with a lower seq — a MEDIA_LOAD, typically — is dropped unseen.
+      if (source !== 'idb' && d.session && d.session !== controlSession) {
+        controlSession = d.session;
+        lastSeq = 0;
+        lastMirrorSeq = 0;
+      }
+      // Once a live session is known, mirrored records from a dead one are stale.
+      if (source === 'idb' && controlSession && d.session && d.session !== controlSession) return;
       try {
         switch (d.type) {
           case 'PING': {
@@ -460,7 +669,23 @@
           case 'UPDATE':
             hasSynced = true;
             if (!acceptSeq(d.seq)) return;
+            clearMediaStage();
             applyUpdateWithThrottle(d);
+            break;
+          case 'MEDIA_LOAD':
+            hasSynced = true;
+            if (!acceptSeq(d.seq)) return;
+            handleMediaLoad(d);
+            break;
+          case 'MEDIA_CLEAR':
+            hasSynced = true;
+            if (acceptSeq(d.seq)) clearDisplay({ fade: d.fade !== false, duration: d.transitionDuration });
+            break;
+          case 'MEDIA_REMOTE':
+            handleMediaRemote(d.remote || d);
+            break;
+          case 'MEDIA_COVER_POS':
+            handleMediaCoverPos(d);
             break;
           case 'SYNC_STATE': {
             const state = d.state || {};
@@ -471,7 +696,10 @@
             if (state.kind === 'clear') {
               clearDisplay();
             } else if (state.kind === 'update' && payload) {
+              clearMediaStage();
               applyUpdateWithThrottle(payload);
+            } else if (state.kind === 'media' && payload) {
+              handleMediaLoad(payload);
             }
             break;
           }
@@ -508,14 +736,6 @@
 
     function getLtOffsetX(d) {
       return Math.max(-1200, Math.min(1200, Number(d && d.ltOffsetX) || 0));
-    }
-
-    function getFullOffsetX(d) {
-      return Math.max(-1200, Math.min(1200, Number(d && d.fullOffsetX) || 0));
-    }
-
-    function getFullOffsetY(d) {
-      return Math.max(-1200, Math.min(1200, Number(d && d.fullOffsetY) || 0));
     }
 
     function getLtBorderRadius(d) {
@@ -1717,7 +1937,7 @@
         elements.txt.style.height = '100%';
         const fullPadLR = Math.max(0, Number(d.padLRFull ?? d.padLR ?? 5));
         elements.txt.style.padding = `0 ${fullPadLR}%`;
-        elements.txt.style.transform = `translate(${getFullOffsetX(d)}px, ${getFullOffsetY(d)}px)`;
+        elements.txt.style.transform = 'none';
         elements.txt.style.display = 'flex';
         elements.txt.style.alignItems = (hAlign === 'left') ? 'flex-start' : (hAlign === 'right') ? 'flex-end' : (hAlign === 'justify' ? 'stretch' : 'center');
         elements.txt.style.justifyContent = (vAlign === 'top') ? 'flex-start' : (vAlign === 'bottom' ? 'flex-end' : 'center');
@@ -2552,6 +2772,7 @@
         clearTimeout(clearTimer);
         clearTimer = null;
       }
+      clearMediaStage();
       elements.txt.style.opacity = '0';
       elements.bg.style.opacity = '0';
       elements.ltWrap.style.opacity = '0';
@@ -2642,6 +2863,21 @@
       window.__bspDisplayEventsBound = true;
       window.addEventListener('resize', handleLtLayoutResize);
       window.addEventListener('resize', handleResize);
+      window.addEventListener('message', (event) => {
+        const data = event && event.data ? event.data : {};
+        if (data.type === 'PREVIEW_UPDATE' && data.payload) {
+          clearMediaStage();
+          handleUpdate(data.payload);
+          return;
+        }
+        if (data.type === 'PREVIEW_CLEAR') {
+          clearDisplay();
+          return;
+        }
+        if (data.type === 'MEDIA_LOAD' || data.type === 'MEDIA_CLEAR' || data.type === 'MEDIA_REMOTE' || data.type === 'MEDIA_COVER_POS') {
+          handleInboundMessage(data, 'postMessage');
+        }
+      });
       window.addEventListener('beforeunload', () => {
         if (rafId) cancelAnimationFrame(rafId);
         if (helloTimer) {

@@ -23,18 +23,6 @@ function sendMainUpdateStatus(payload) {
   mainWindow.webContents.send('bsp:update-status', payload || {});
 }
 
-function isExpectedMissingReleaseMetadataError(error) {
-  const message = String((error && (error.stack || error.message || error)) || '').toLowerCase();
-  if (!message) return false;
-  return (
-    message.includes('latest-mac.yml') ||
-    message.includes('latest.yml') ||
-    message.includes('404') ||
-    message.includes('not found') ||
-    message.includes('enoent')
-  );
-}
-
 function setupMainAutoUpdater() {
   if (!app.isPackaged) {
     sendMainUpdateStatus({ state: 'dev-mode' });
@@ -76,10 +64,6 @@ function setupMainAutoUpdater() {
   });
 
   autoUpdater.on('error', (error) => {
-    if (isExpectedMissingReleaseMetadataError(error)) {
-      sendMainUpdateStatus({ state: 'none' });
-      return;
-    }
     sendMainUpdateStatus({
       state: 'error',
       message: error && error.message ? String(error.message) : 'Update failed'
@@ -91,10 +75,6 @@ function scheduleMainAutoUpdateCheck() {
   if (!app.isPackaged) return;
   setTimeout(() => {
     autoUpdater.checkForUpdates().catch((error) => {
-      if (isExpectedMissingReleaseMetadataError(error)) {
-        sendMainUpdateStatus({ state: 'none' });
-        return;
-      }
       sendMainUpdateStatus({
         state: 'error',
         message: error && error.message ? String(error.message) : 'Unable to check for updates'
@@ -116,6 +96,7 @@ function getContentType(filePath) {
   if (ext === '.png') return 'image/png';
   if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
   if (ext === '.json') return 'application/json; charset=utf-8';
+  if (ext === '.xml') return 'text/xml; charset=utf-8';
   return 'application/octet-stream';
 }
 
@@ -426,10 +407,6 @@ app.whenReady().then(() => {
       await autoUpdater.checkForUpdates();
       return { ok: true };
     } catch (error) {
-      if (isExpectedMissingReleaseMetadataError(error)) {
-        sendMainUpdateStatus({ state: 'none' });
-        return { ok: true };
-      }
       return { ok: false, error: error && error.message ? String(error.message) : 'Failed to check updates.' };
     }
   });
@@ -448,51 +425,6 @@ app.whenReady().then(() => {
     return { ok: true };
   });
   ipcMain.handle('bsp:save-theme', () => ({ ok: true }));
-  ipcMain.handle('bsp:http-fetch-text', async (_event, payload = {}) => {
-    const rawUrl = payload && payload.url ? String(payload.url).trim() : '';
-    if (!rawUrl) return { ok: false, error: 'Missing URL.' };
-
-    const timeoutMs = Math.max(3000, Math.min(30000, Number(payload.timeoutMs) || 12000));
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch(rawUrl, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'BibleSongPro/1.0 (+https://github.com/Johnbatey/bible-song-pro-obs)',
-          'Accept': 'text/plain, text/xml, application/xml, application/json, text/html;q=0.8,*/*;q=0.5'
-        }
-      });
-      const text = await response.text();
-      return {
-        ok: response.ok,
-        status: response.status,
-        text: String(text || ''),
-        contentType: String(response.headers.get('content-type') || '')
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        error: error && error.message ? String(error.message) : 'Remote fetch failed.'
-      };
-    } finally {
-      clearTimeout(timer);
-    }
-  });
-  ipcMain.handle('bsp:open-external-url', async (_event, rawUrl) => {
-    const url = String(rawUrl || '').trim();
-    if (!url) return { ok: false, error: 'Missing URL.' };
-    if (!/^https?:\/\//i.test(url)) {
-      return { ok: false, error: 'Only http/https URLs are allowed.' };
-    }
-    try {
-      await shell.openExternal(url);
-      return { ok: true };
-    } catch (error) {
-      return { ok: false, error: error && error.message ? String(error.message) : 'Failed to open external URL.' };
-    }
-  });
   ipcMain.handle('bsp:open-in-location', async (_event, targetPath) => {
     if (targetPath) await shell.showItemInFolder(targetPath);
     return { ok: true };

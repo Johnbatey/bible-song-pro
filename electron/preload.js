@@ -49,15 +49,6 @@ const BSPDesktop = {
   async installUpdateNow() {
     return ipcRenderer.invoke('bsp:update-install');
   },
-  async fetchRemoteText(url, options = {}) {
-    return ipcRenderer.invoke('bsp:http-fetch-text', {
-      url,
-      timeoutMs: options && Number.isFinite(options.timeoutMs) ? options.timeoutMs : undefined
-    });
-  },
-  async openExternalUrl(url) {
-    return ipcRenderer.invoke('bsp:open-external-url', url);
-  },
   onOutputClosed(callback) {
     ipcRenderer.removeAllListeners('bsp:output-closed');
     ipcRenderer.on('bsp:output-closed', () => callback());

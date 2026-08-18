@@ -1,0 +1,439 @@
+/* Native Media workspace */
+body[data-sidebar-tab="media"] #sidebar .search-container,
+body[data-sidebar-tab="media"] #sidebar #bible-nav,
+body[data-sidebar-tab="media"] #sidebar #version-bar,
+body[data-sidebar-tab="media"] #sidebar #song-list,
+body[data-sidebar-tab="media"] #sidebar #sidebar-bottom,
+body[data-sidebar-tab="media"] #main #editor-container,
+body[data-sidebar-tab="media"] #main .live-controls {
+  display: none !important;
+}
+
+body[data-sidebar-tab="media"] #btn-toolbar-add,
+body[data-sidebar-tab="media"] #btn-preset,
+body[data-sidebar-tab="media"] .annotate-wrap,
+body[data-sidebar-tab="media"] .toolbar-mode-switch,
+body[data-sidebar-tab="media"] #workspace-font-size-control {
+  display: none !important;
+}
+
+body:not([data-sidebar-tab="media"]) #media-sidebar-panel,
+body:not([data-sidebar-tab="media"]) #media-workspace,
+body:not([data-sidebar-tab="media"]) #media-toolbar-tools {
+  display: none !important;
+}
+
+/* Media toolbar: matches BSP toolbar density and button sizing. */
+#media-toolbar-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+#media-toolbar-tools .toolbar-icon-btn.media-toolbar-text-btn {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+
+#media-toolbar-tools .toolbar-icon-btn.media-toolbar-danger:hover {
+  color: var(--danger, #ff453a);
+  border-color: rgba(255, 69, 58, .5);
+}
+
+/* Media FX/Fit reuse .preset-popover so they inherit the same surface, borders, shadow and
+   theme rules as the Bible/Songs FX popover. Only the height is relaxed: the shared rule
+   locks a fixed height sized for the Animation panel, and these hold different fields. */
+.media-popover {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: min(70vh, 420px) !important;
+}
+
+.media-popover-color {
+  height: 34px;
+  padding: 3px;
+  cursor: pointer;
+}
+
+#media-sidebar-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  background: var(--bg-panel);
+  overflow: hidden;
+}
+
+.media-tool-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.media-icon-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 7px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.media-icon-btn:hover,
+.media-icon-btn.active {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.16);
+  color: var(--accent-light);
+}
+
+.media-icon-btn.danger {
+  color: var(--danger, #ff453a);
+}
+
+.media-search-tools {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.media-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: var(--panel-content-bg, #0a0d14);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 11px;
+  outline: none;
+}
+
+.media-input:focus {
+  border-color: rgba(74,134,255,.65);
+}
+
+.media-slider {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.media-thumb-list {
+  --media-thumb-scale: 95%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+}
+
+.media-thumb {
+  position: relative;
+  width: var(--media-thumb-scale);
+  margin-bottom: 10px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  cursor: pointer;
+}
+
+.media-thumb.active {
+  border-color: var(--accent-light);
+}
+
+.media-thumb.disabled {
+  opacity: .45;
+  filter: saturate(.7);
+}
+
+.media-thumb img {
+  display: block;
+  width: 100%;
+  pointer-events: none;
+}
+
+.media-thumb-num,
+.media-thumb-enabled {
+  position: absolute;
+  top: 6px;
+  z-index: 2;
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(0,0,0,.68);
+  color: #fff;
+}
+
+.media-thumb-num {
+  right: 6px;
+}
+
+.media-thumb-enabled {
+  left: 6px;
+  border: 1px solid rgba(255,255,255,.18);
+}
+
+.media-thumb-title {
+  padding: 5px 7px;
+  background: rgba(0,0,0,.78);
+  color: var(--text-secondary);
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.media-mini-controls {
+  display: none;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,.03);
+}
+
+.media-mini-controls.open {
+  display: block;
+}
+
+/* Live-control row mirrors the BSP .live-controls .nav-row: Clear sits beside Project
+   Live, and Previous/Next are icon buttons paired at the end. */
+.media-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.media-nav-row .media-clear-btn {
+  background: #444;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.media-nav-row .media-live-btn {
+  padding: 0 14px;
+  min-width: 126px;
+  white-space: nowrap;
+}
+
+.media-nav-arrows {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.media-nav-row .media-arrow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+#media-workspace {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  overflow: hidden;
+  position: relative;
+}
+
+.media-preview-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+}
+
+#media-preview-frame {
+  position: relative;
+  width: calc(100% - 20px);
+  height: calc(100% - 20px);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#media-preview-frame img,
+#media-preview-frame video {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: 50% 50%;
+  display: block;
+}
+
+#media-preview-frame.media-fit-cover img,
+#media-preview-frame.media-fit-cover video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#media-preview-frame.media-fit-blur img,
+#media-preview-frame.media-fit-blur video {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.media-preview-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(34px) brightness(.52);
+  transform: scale(1.08);
+  opacity: .9;
+}
+
+.media-preview-audio-card {
+  width: min(620px, 74%);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  background: rgba(10,14,22,.84);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+
+.media-preview-audio-card img {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.media-preview-placeholder {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.media-preview-tools {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.media-pan-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  z-index: 4;
+  cursor: grab;
+}
+
+.media-pan-overlay.open {
+  display: block;
+}
+
+.media-pan-hint {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 7px;
+  background: rgba(0,0,0,.58);
+  color: #ddd;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.media-output-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px));
+  z-index: 6;
+}
+
+.media-scrub {
+  height: 4px;
+  background: rgba(255,255,255,.16);
+  cursor: pointer;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 9px;
+  display: none;
+}
+
+.media-scrub.open {
+  display: block;
+}
+
+.media-scrub > div {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+}
+
+.media-context-menu {
+  position: fixed;
+  display: none;
+  z-index: 10000;
+  min-width: 210px;
+  max-height: calc(100vh - 12px);
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  box-shadow: 0 18px 42px rgba(0,0,0,.45);
+}
+
+.media-context-menu.open {
+  display: block;
+}
+
+.media-context-menu button {
+  width: 100%;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  padding: 8px 10px;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.media-context-menu button:hover {
+  background: rgba(255,255,255,.08);
+}
+
+.media-context-menu button.danger {
+  color: var(--danger, #ff453a);
+}

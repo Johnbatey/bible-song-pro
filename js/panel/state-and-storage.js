@@ -566,8 +566,6 @@
         autoResizeFull: document.getElementById('auto-resize-full')?.value,
         autoResizeLT: document.getElementById('auto-resize-lt')?.value,
         refPositionFull: document.getElementById('ref-position-full')?.value,
-        fullOffsetX: document.getElementById('full-offset-x')?.value,
-        fullOffsetY: document.getElementById('full-offset-y')?.value,
         hAlignFullRef: fullRefHAlign,
         hAlignFull: fullHAlign,
         vAlignFull: fullVAlign,
@@ -668,8 +666,6 @@
       'autoResizeFull',
       'autoResizeLT',
       'refPositionFull',
-      'fullOffsetX',
-      'fullOffsetY',
       'ltWidthPct',
       'ltScalePct',
       'ltOffsetX',
@@ -696,6 +692,10 @@
       'dualVersionSecondaryId'
     ]));
     const SETTINGS_TARGET_TABS = ['bible', 'songs', 'schedule'];
+    // Media is a settings target but not a projection-settings profile: it keeps its own
+    // defaults (see media-workspace.js) and must not read or write typography profiles.
+    const MEDIA_SETTINGS_TABS = new Set(['media', 'presets', 'themes', 'updates', 'feedback']);
+    let mediaSettingsTargetActive = false;
 
     function normalizeSettingsTargetTab(value) {
       return (value === 'follow' || SETTINGS_TARGET_TABS.includes(value)) ? value : 'follow';
@@ -732,8 +732,6 @@
         autoResizeFull: document.getElementById('auto-resize-full')?.value,
         autoResizeLT: document.getElementById('auto-resize-lt')?.value,
         refPositionFull: document.getElementById('ref-position-full')?.value,
-        fullOffsetX: document.getElementById('full-offset-x')?.value,
-        fullOffsetY: document.getElementById('full-offset-y')?.value,
         ltPresetSelection: document.getElementById('lt-preset-select')?.value || 'default',
         ltPresetUpdatesLive: document.getElementById('lt-preset-update-live')?.value !== 'false',
         ltWidthPct: document.getElementById('lt-width-pct')?.value,
@@ -862,8 +860,10 @@
 
     function updateSettingsTargetControl() {
       const value = normalizeSettingsTargetTab(settingsTargetTab);
-        const activeKey = value === 'follow' ? getEffectiveSettingsTargetTab(value) : value;
-        ['follow', 'bible', 'songs', 'schedule'].forEach((key) => {
+        const activeKey = mediaSettingsTargetActive
+          ? 'media'
+          : (value === 'follow' ? getEffectiveSettingsTargetTab(value) : value);
+        ['follow', 'bible', 'songs', 'schedule', 'media'].forEach((key) => {
         const btn = document.getElementById(`settings-target-${key}`);
           if (btn) btn.classList.toggle('active', key === activeKey);
       });
@@ -872,7 +872,23 @@
       }
     }
 
+    function refreshMediaSettingsTabVisibility() {
+      document.querySelectorAll('.sm-sidebar-item[data-sm-tab]').forEach((item) => {
+        const tabId = item.dataset.smTab;
+        item.style.display = MEDIA_SETTINGS_TABS.has(tabId) ? '' : 'none';
+      });
+      const activeTabId = document.querySelector('.sm-sidebar-item.active[data-sm-tab]')?.dataset?.smTab;
+      switchSettingsTab(MEDIA_SETTINGS_TABS.has(activeTabId) ? activeTabId : 'media');
+      if (window.bspMedia && typeof window.bspMedia.syncSettingsForm === 'function') {
+        window.bspMedia.syncSettingsForm();
+      }
+    }
+
     function refreshSettingsTabVisibility(targetTab = getEffectiveSettingsTargetTab()) {
+      if (mediaSettingsTargetActive) {
+        refreshMediaSettingsTabVisibility();
+        return;
+      }
       const effectiveTarget = SETTINGS_TARGET_TABS.includes(targetTab) ? targetTab : 'bible';
       const tabSpecificMap = {
         song: 'songs',
@@ -882,6 +898,10 @@
       const setlistHiddenTabs = new Set(['fullscreen', 'lowerthird', 'typography', 'background']);
       document.querySelectorAll('.sm-sidebar-item[data-sm-tab]').forEach((item) => {
         const tabId = item.dataset.smTab;
+        if (tabId === 'media') {
+          item.style.display = 'none';
+          return;
+        }
         if (effectiveTarget === 'schedule' && setlistHiddenTabs.has(tabId)) {
           item.style.display = 'none';
           return;
@@ -979,8 +999,6 @@
       if (next.autoResizeFull && document.getElementById('auto-resize-full')) document.getElementById('auto-resize-full').value = next.autoResizeFull;
       if (next.autoResizeLT && document.getElementById('auto-resize-lt')) document.getElementById('auto-resize-lt').value = next.autoResizeLT;
       if (next.refPositionFull && document.getElementById('ref-position-full')) document.getElementById('ref-position-full').value = next.refPositionFull;
-      if (next.fullOffsetX != null && document.getElementById('full-offset-x')) document.getElementById('full-offset-x').value = next.fullOffsetX;
-      if (next.fullOffsetY != null && document.getElementById('full-offset-y')) document.getElementById('full-offset-y').value = next.fullOffsetY;
       if (typeof renderLtPresetOptions === 'function') renderLtPresetOptions(next.ltPresetSelection || 'default', targetTab);
       if (typeof updateLtPresetUpdateLiveState === 'function') {
         updateLtPresetUpdateLiveState(next.ltPresetUpdatesLive !== false);
@@ -1086,8 +1104,17 @@
       return true;
     }
 
+    function setMediaSettingsTargetActive(active) {
+      const next = !!active;
+      if (next === mediaSettingsTargetActive) return;
+      if (next) saveProjectionSettingsProfileForTab(getEffectiveSettingsTargetTab());
+      mediaSettingsTargetActive = next;
+      updateSettingsTargetControl();
+    }
+
     function setSettingsTargetTab(target, opts = {}) {
       saveProjectionSettingsProfileForTab(getEffectiveSettingsTargetTab());
+      mediaSettingsTargetActive = false;
       settingsTargetTab = normalizeSettingsTargetTab(target);
       updateSettingsTargetControl();
       applyProjectionSettingsProfileForTab(getEffectiveSettingsTargetTab(), { triggerChange: !!opts.triggerChange });
@@ -1099,6 +1126,10 @@
     }
 
     function handleSettingsTargetChange(target) {
+      if (target === 'media') {
+        setMediaSettingsTargetActive(true);
+        return;
+      }
       setSettingsTargetTab(target || 'bible');
     }
 
@@ -1204,8 +1235,6 @@
         ltScalePct: document.getElementById('lt-scale-pct')?.value || 100,
         ltOffsetY: document.getElementById('lt-offset-y')?.value || 0,
         ltOffsetX: document.getElementById('lt-offset-x')?.value || 0,
-        fullOffsetX: document.getElementById('full-offset-x')?.value || 0,
-        fullOffsetY: document.getElementById('full-offset-y')?.value || 0,
         ltBorderRadius: document.getElementById('lt-border-radius')?.value || 0,
         bgToggle: document.getElementById('bg-toggle').checked,
         hAlignFullRef: fullRefHAlign,

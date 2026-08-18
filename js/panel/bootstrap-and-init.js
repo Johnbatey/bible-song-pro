@@ -1044,14 +1044,6 @@
         const ltOffsetXEl = document.getElementById('lt-offset-x');
         if (ltOffsetXEl) ltOffsetXEl.value = ui.ltOffsetX;
       }
-      if (ui.fullOffsetX != null) {
-        const fullOffsetXEl = document.getElementById('full-offset-x');
-        if (fullOffsetXEl) fullOffsetXEl.value = ui.fullOffsetX;
-      }
-      if (ui.fullOffsetY != null) {
-        const fullOffsetYEl = document.getElementById('full-offset-y');
-        if (fullOffsetYEl) fullOffsetYEl.value = ui.fullOffsetY;
-      }
       if (ui.ltBorderRadius != null) {
         const ltRadiusEl = document.getElementById('lt-border-radius');
         if (ltRadiusEl) ltRadiusEl.value = ui.ltBorderRadius;
@@ -4116,9 +4108,6 @@
       document.querySelectorAll('.sm-tab-panel').forEach(panel => {
         panel.classList.toggle('active', panel.dataset.smPanel === tabId);
       });
-      if (tabId === 'tutorial' && typeof window.initTutorialHub === 'function') {
-        window.initTutorialHub();
-      }
     }
 
     let feedbackSuccessOverlayTimer = null;
@@ -4710,6 +4699,99 @@
       if (runInit && !hasInitialized) hasInitialized = true;
     }
 
+    // ===== BUNDLED BIBLES =====
+    const SEEDED_BIBLES_KEY = 'bsp_seeded_default_bibles';
+
+    function getSeededDefaultBibles() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(SEEDED_BIBLES_KEY) || '[]');
+        return Array.isArray(raw) ? raw : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function markDefaultBibleSeeded(version) {
+      const seeded = getSeededDefaultBibles();
+      if (seeded.includes(version)) return;
+      seeded.push(version);
+      try { localStorage.setItem(SEEDED_BIBLES_KEY, JSON.stringify(seeded)); } catch (_) {}
+    }
+
+    // Bibles shipped in the bibles/ folder next to this panel arrive by <script> tag,
+    // not fetch(): as an OBS custom browser dock the panel runs on file://, where the
+    // browser blocks reading a sibling file over fetch/XHR but still allows script tags.
+    // The same path works in the desktop app and when served over http://localhost:5510.
+    const bundledBibleXml = Object.create(null);
+    window.BSP_REGISTER_BUNDLED_BIBLE = function (version, xmlText) {
+      if (version && xmlText) bundledBibleXml[String(version)] = xmlText;
+    };
+
+    function loadBundledBibleScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = false;
+        script.onload = () => { script.remove(); resolve(); };
+        script.onerror = () => { script.remove(); reject(new Error(`Failed to load ${src}`)); };
+        document.head.appendChild(script);
+      });
+    }
+
+    // Installs the bundled bibles so a new user has scripture to present immediately.
+    // A version is seeded at most once: if the user later deletes it, it stays deleted.
+    async function seedDefaultBiblesIfNeeded() {
+      try {
+        await loadBundledBibleScript('bibles/manifest.js');
+      } catch (_) {
+        // No bibles/ folder alongside the panel — nothing to seed.
+        return;
+      }
+
+      const available = Array.isArray(window.BSP_BUNDLED_BIBLES) ? window.BSP_BUNDLED_BIBLES : [];
+      const seeded = getSeededDefaultBibles();
+      const pending = available.filter(version => !seeded.includes(version) && !bibles[version]);
+      if (!pending.length) return;
+
+      let installed = 0;
+      for (const version of pending) {
+        try {
+          await loadBundledBibleScript(`bibles/${version}.js`);
+          const xmlText = bundledBibleXml[version];
+          if (!xmlText) continue;
+
+          const xml = new DOMParser().parseFromString(xmlText, 'text/xml');
+          const parsed = parseBible(xml, version);
+          if (!parsed.length) continue;
+
+          bibles[version] = parsed;
+          clearBibleSearchCache(version);
+          await idbPut(STORE_BIBLES, buildBibleRecord(version, parsed, { isNew: true }));
+          markDefaultBibleSeeded(version);
+          installed += 1;
+          if (!activeBibleVersion || !bibles[activeBibleVersion]) {
+            activeBibleVersion = version;
+          }
+        } catch (error) {
+          console.error(`Bundled bibles: seeding ${version} failed`, error);
+        } finally {
+          // Release the raw XML; the parsed chapters are what we keep.
+          delete bundledBibleXml[version];
+        }
+        // Yield so the panel stays responsive while the remaining versions parse.
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+
+      if (!installed) return;
+      renderVersionBar();
+      updateBibleLists();
+      renderSongs();
+      ensureSelectionFallback();
+      saveState();
+      saveToStorageDebounced();
+      sendSyncState();
+    }
+
     // ===== INIT =====
     async function bootApp() {
       await openDb();
@@ -4772,6 +4854,8 @@
       }
       sendSyncState();
       requestRelayState();
+      // Not awaited: parsing the bundled bibles must not hold up startup.
+      seedDefaultBiblesIfNeeded().catch(err => console.error('Bundled bibles: seeding failed', err));
       if (isVmixMode() && vmixState.enabled && vmixState.reconnectOnStartup !== false) {
         vmixReconnect().catch(() => {});
       }

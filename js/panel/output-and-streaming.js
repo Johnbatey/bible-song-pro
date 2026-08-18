@@ -155,7 +155,9 @@
       const viewport = getEmbeddedDisplayViewport();
       const sceneLayers = getOutputSceneLayers();
       const seq = burstSeq || nextSeq();
-      if (currentProgramDisplaySource === 'lyrics' && embeddedProgramDisplayState.kind === 'update' && embeddedProgramDisplayState.payload) {
+      if (currentProgramDisplaySource === 'lyrics' && embeddedProgramDisplayState.kind === 'media' && embeddedProgramDisplayState.payload) {
+        postMessageToStandaloneOutput(embeddedProgramDisplayState.payload);
+      } else if (currentProgramDisplaySource === 'lyrics' && embeddedProgramDisplayState.kind === 'update' && embeddedProgramDisplayState.payload) {
         // Full content sync — includes text, background, mode, AND scene layers
         postMessageToStandaloneOutput({
           type: 'PREVIEW_UPDATE',
@@ -223,7 +225,9 @@
       if (!embeddedProgramDisplayReady) return;
       const viewport = getEmbeddedDisplayViewport();
       const sceneLayers = getOutputSceneLayers();
-      if (embeddedProgramDisplayState.kind === 'update' && embeddedProgramDisplayState.payload) {
+      if (embeddedProgramDisplayState.kind === 'media' && embeddedProgramDisplayState.payload) {
+        postMessageToEmbeddedProgramDisplay(embeddedProgramDisplayState.payload);
+      } else if (embeddedProgramDisplayState.kind === 'update' && embeddedProgramDisplayState.payload) {
         postMessageToEmbeddedProgramDisplay({
           type: 'PREVIEW_UPDATE',
           payload: {

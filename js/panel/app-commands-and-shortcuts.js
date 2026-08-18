@@ -56,15 +56,6 @@
       onAnyControlChange();
       showToast(t('settings_position_reset_default'));
     }
-
-    function resetFullPosition() {
-      const fullOffsetXEl = document.getElementById('full-offset-x');
-      const fullOffsetYEl = document.getElementById('full-offset-y');
-      if (fullOffsetXEl) fullOffsetXEl.value = 0;
-      if (fullOffsetYEl) fullOffsetYEl.value = 0;
-      onAnyControlChange();
-      showToast(t('settings_position_reset_default'));
-    }
     
     function confirmReset() {
       showConfirm(t('settings_reset_plugin'), t('settings_reset_plugin_confirm'), () => {

@@ -22,6 +22,7 @@
           const saved = String(localStorage.getItem('activeWorkspaceTab') || '').toLowerCase();
           if (saved === 'song' || saved === 'songs') startupTab = 'songs';
           else if (saved === 'schedule' || saved === 'setlist') startupTab = 'schedule';
+          else if (saved === 'media') startupTab = 'media';
         } catch (_) {}
 
         if (typeof setSidebarTab === 'function') setSidebarTab(startupTab);
